@@ -31,6 +31,43 @@ npm install
 npm start
 ```
 
+4. Lancer le backend en mode développement
+```bash
+cd backend
+npm run start:dev
+```
+
+5. Tester les endpoints
+
+- Health Check (REST API):
+  - URL: http://localhost:3000/health
+  - Méthode: GET
+  - Réponse attendue: `{"status":"OK","jobId":"1"}`
+
+- GraphQL API:
+  - URL: http://localhost:3000/graphql
+  - Interface GraphQL Playground: Ouvrez l'URL dans votre navigateur
+  - Test avec Postman:
+    - Méthode: POST
+    - Body (GraphQL):
+    ```graphql
+    query {
+      status {
+        result
+      }
+    }
+    ```
+    - Réponse attendue:
+    ```json
+    {
+      "data": {
+        "status": {
+          "result": "ok"
+        }
+      }
+    }
+    ```
+
 ## Contribution
 - Thibault Delattre
 
