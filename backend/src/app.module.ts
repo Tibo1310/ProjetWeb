@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
-import { GraphQLModule as NestGraphQLModule } from '@nestjs/graphql';
+import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HealthModule } from './health/health.module';
-import { GraphQLModule } from './graphql/graphql.module';
+import { UsersModule } from './users/users.module';
+import { ConversationsModule } from './conversations/conversations.module';
 import { join } from 'path';
 
 @Module({
@@ -16,13 +17,20 @@ import { join } from 'path';
         port: 6379,
       },
     }),
-    NestGraphQLModule.forRoot<ApolloDriverConfig>({
+    GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       sortSchema: true,
+      csrfPrevention: false,
+      playground: {
+        settings: {
+          'request.credentials': 'include',
+        },
+      },
     }),
     HealthModule,
-    GraphQLModule,
+    UsersModule,
+    ConversationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

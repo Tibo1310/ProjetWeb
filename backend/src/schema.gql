@@ -2,10 +2,72 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type Query {
-  status: StatusResponse!
+type Conversation {
+  createdAt: DateTime!
+  id: ID!
+  isGroup: Boolean!
+  lastMessageSentAt: DateTime
+  lastMessageSentBy: User
+  messages: [Message!]!
+  name: String!
+  participants: [User!]!
+  updatedAt: DateTime!
 }
 
-type StatusResponse {
-  result: String!
+input CreateConversationInput {
+  isGroup: Boolean!
+  name: String!
+  participantIds: [ID!]!
+}
+
+input CreateUserInput {
+  email: String!
+  password: String!
+  username: String!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type Message {
+  attachmentType: String
+  attachmentUrl: String
+  content: String!
+  conversationId: ID!
+  createdAt: DateTime!
+  id: ID!
+  isRead: Boolean!
+  readBy: [User!]!
+  sender: User!
+}
+
+type Mutation {
+  createConversation(input: CreateConversationInput!): Conversation!
+  createUser(input: CreateUserInput!): User!
+  sendMessage(input: SendMessageInput!, senderId: ID!): Message!
+}
+
+type Query {
+  conversation(id: ID!): Conversation
+  user(id: ID!): User
+  userConversations(userId: ID!): [Conversation!]!
+  users: [User!]!
+}
+
+input SendMessageInput {
+  attachmentType: String
+  attachmentUrl: String
+  content: String!
+  conversationId: ID!
+}
+
+type User {
+  createdAt: DateTime!
+  email: String!
+  id: ID!
+  isOnline: Boolean!
+  lastSeen: DateTime!
+  username: String!
 }
