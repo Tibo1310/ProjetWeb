@@ -4,4 +4,4 @@ import { StatusResolver } from './status.resolver';
 @Module({
   providers: [StatusResolver],
 })
-export class GraphQLModule {} 
+export class GraphQLStatusModule {} 

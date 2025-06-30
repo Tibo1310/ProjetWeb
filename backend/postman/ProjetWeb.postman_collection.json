@@ -1,0 +1,215 @@
+{
+	"info": {
+		"_postman_id": "98765432-9876-9876-9876-987654321098",
+		"name": "ProjetWeb",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response has jobId\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('jobId');",
+							"    pm.expect(jsonData.status).to.eql('OK');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/health",
+					"host": ["{{baseUrl}}"],
+					"path": ["health"]
+				}
+			}
+		},
+		{
+			"name": "GraphQL - Status Query",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Status is ok\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data.status.result).to.eql('ok');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"query\":\"query { status { result } }\"}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/graphql",
+					"host": ["{{baseUrl}}"],
+					"path": ["graphql"]
+				}
+			}
+		},
+		{
+			"name": "GraphQL - Create User",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"User is created\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data.createUser).to.have.property('id');",
+							"    pm.expect(jsonData.data.createUser.email).to.eql('test@example.com');",
+							"    pm.collectionVariables.set('userId', jsonData.data.createUser.id);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"query\":\"mutation { createUser(createUserInput: { email: \\\"test@example.com\\\", username: \\\"testuser\\\", password: \\\"password123\\\" }) { id email username isOnline } }\"}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/graphql",
+					"host": ["{{baseUrl}}"],
+					"path": ["graphql"]
+				}
+			}
+		},
+		{
+			"name": "GraphQL - Create Conversation",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Conversation is created\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data.createConversation).to.have.property('id');",
+							"    pm.expect(jsonData.data.createConversation.name).to.eql('Test Conversation');",
+							"    pm.collectionVariables.set('conversationId', jsonData.data.createConversation.id);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"query\":\"mutation { createConversation(createConversationInput: { name: \\\"Test Conversation\\\", participantIds: [{{userId}}] }) { id name participants messages isGroup } }\"}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/graphql",
+					"host": ["{{baseUrl}}"],
+					"path": ["graphql"]
+				}
+			}
+		},
+		{
+			"name": "GraphQL - Send Message",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Message is sent\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data.sendMessage).to.have.property('id');",
+							"    pm.expect(jsonData.data.sendMessage.content).to.eql('Hello, World!');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"query\":\"mutation { sendMessage(sendMessageInput: { content: \\\"Hello, World!\\\", senderId: {{userId}}, conversationId: {{conversationId}} }) { id content senderId conversationId } }\"}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/graphql",
+					"host": ["{{baseUrl}}"],
+					"path": ["graphql"]
+				}
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000"
+		},
+		{
+			"key": "userId",
+			"value": ""
+		},
+		{
+			"key": "conversationId",
+			"value": ""
+		}
+	]
+} 

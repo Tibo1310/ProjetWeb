@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import { HealthModule } from './health/health.module';
 import { UsersModule } from './users/users.module';
 import { ConversationsModule } from './conversations/conversations.module';
+import { GraphQLStatusModule } from './graphql/graphql.module';
 import { join } from 'path';
 
 @Module({
@@ -31,6 +32,7 @@ import { join } from 'path';
     HealthModule,
     UsersModule,
     ConversationsModule,
+    GraphQLStatusModule,
   ],
   controllers: [AppController],
   providers: [AppService],
