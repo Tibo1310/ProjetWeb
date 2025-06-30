@@ -77,6 +77,122 @@ npm run start:dev
 ## Contribution
 - Thibault Delattre
 
+## Implémentation Détaillée
+
+### 1. Architecture Backend
+Le backend est construit avec NestJS et utilise les technologies suivantes :
+- **GraphQL** pour l'API principale
+- **Bull** pour la gestion des files d'attente de messages
+- **Redis** comme broker de messages
+- **Jest** pour les tests unitaires
+- **Newman/Postman** pour les tests d'intégration
+
+### 2. Structure du Projet
+Le backend est organisé en modules :
+- `users` : Gestion des utilisateurs et de leurs statuts
+- `conversations` : Gestion des conversations et des messages
+- `health` : Endpoints de surveillance de l'application
+- `graphql` : Configuration et resolvers GraphQL
+
+### 3. Tests
+#### Tests Unitaires
+- Tests des services (UsersService, ConversationsService)
+- Tests des contrôleurs (HealthController)
+- Tests des resolvers GraphQL (StatusResolver)
+- Couverture de code complète
+
+#### Tests d'Intégration
+Collection Postman testant :
+- Health Check endpoint
+- GraphQL Status Query
+- Création d'utilisateurs
+- Création de conversations
+- Envoi de messages
+
+### 4. CI/CD Pipeline
+Pipeline GitHub Actions comprenant :
+1. **Test Stage** :
+   - Exécution des tests unitaires
+   - Démarrage d'un conteneur Redis pour les tests
+   - Exécution des tests d'intégration
+   - Génération et sauvegarde des rapports de tests
+
+2. **Build Stage** :
+   - Construction de l'image Docker
+   - Push vers Docker Hub avec versioning
+   - Utilisation du cache pour optimisation
+
+3. **Deploy Stage** :
+   - Déploiement automatique sur Render.com
+   - Déclenchement uniquement sur la branche master
+   - Utilisation de webhooks pour le déploiement
+
+### 5. Monitoring et Santé
+- Endpoint `/health` pour la surveillance
+- Intégration avec Bull pour la gestion des files d'attente
+- Logs et métriques pour le suivi des performances
+
+### 6. Sécurité
+- Protection CSRF désactivée pour le développement
+- Configuration sécurisée de GraphQL
+- Gestion des secrets via GitHub Secrets
+
+### 7. Commandes Importantes
+
+#### Développement
+```bash
+# Démarrer l'application en mode développement
+npm run start:dev
+
+# Démarrer l'application en mode debug
+npm run start:debug
+
+# Démarrer l'application en mode production
+npm run start:prod
+```
+
+#### Tests
+```bash
+# Exécuter les tests unitaires
+npm test
+
+# Exécuter les tests unitaires avec couverture
+npm run test:cov
+
+# Exécuter les tests unitaires en mode watch
+npm run test:watch
+
+# Exécuter les tests d'intégration avec Newman/Postman
+npm run test:integration
+
+# Exécuter les tests end-to-end
+npm run test:e2e
+```
+
+#### Autres Commandes
+```bash
+# Compiler l'application
+npm run build
+
+# Formater le code
+npm run format
+
+# Linter le code
+npm run lint
+```
+
+#### Docker
+```bash
+# Construire l'image
+docker build -t projetweb-backend .
+
+# Démarrer le conteneur
+docker run -p 3000:3000 projetweb-backend
+
+# Démarrer avec Docker Compose (inclut Redis)
+docker-compose up
+```
+
 ----------------------------
 
 ## 1 - Etude de faisabilité

@@ -37,23 +37,33 @@ jobs:
       working-directory: ./backend
       run: npm test
 
-    - name: Start backend server for integration tests
+    - name: Create Newman directory
+      working-directory: ./backend
+      run: mkdir -p newman
+
+    - name: Build application
+      working-directory: ./backend
+      run: npm run build
+
+    - name: Start backend server and run integration tests
       working-directory: ./backend
       run: |
-        npm run build
-        npm run start:prod &
-        sleep 10 # Wait for server to start
-
-    - name: Run integration tests
-      working-directory: ./backend
-      run: npm run test:integration
+        node dist/main.js &
+        echo "Waiting for server to start..."
+        sleep 15
+        echo "Running integration tests..."
+        npm run test:integration
+        echo "Integration tests completed"
+        pkill -f "node dist/main.js"
 
     - name: Upload test results
       if: always()
       uses: actions/upload-artifact@v3
       with:
         name: integration-test-results
-        path: backend/newman/
+        path: |
+          backend/newman/
+          backend/coverage/
 
   build-and-push:
     needs: test
