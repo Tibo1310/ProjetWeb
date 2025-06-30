@@ -1,10 +1,10 @@
-import { Field, ID, InputType } from '@nestjs/graphql';
+import { Field, ID, InputType, Int } from '@nestjs/graphql';
 import { IsString, IsUrl, MinLength } from 'class-validator';
 
 @InputType()
 export class SendMessageInput {
-  @Field(() => ID)
-  conversationId: string;
+  @Field(() => Int)
+  conversationId: number;
 
   @Field()
   @IsString()
@@ -18,4 +18,7 @@ export class SendMessageInput {
   @Field(() => String, { nullable: true })
   @IsString()
   attachmentType?: string;
+
+  @Field(() => Int)
+  senderId: number;
 } 

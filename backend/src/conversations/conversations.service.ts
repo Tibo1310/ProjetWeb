@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 import { Conversation } from './models/conversation.model';
 import { Message } from './models/message.model';
 import { CreateConversationInput } from './dto/create-conversation.input';
@@ -7,10 +9,73 @@ import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class ConversationsService {
-  private conversations: Conversation[] = []; // Temporaire, à remplacer par une base de données
-  private messages: Message[] = []; // Temporaire, à remplacer par une base de données
+  private conversations: Conversation[] = [];
+  private messages: Message[] = [];
+  private nextConversationId = 1;
+  private nextMessageId = 1;
 
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    @InjectQueue('messages') private messagesQueue: Queue,
+    private readonly usersService: UsersService
+  ) {}
+
+  async createConversation(createConversationInput: CreateConversationInput): Promise<Conversation> {
+    const now = new Date();
+    const conversation: Conversation = {
+      id: this.nextConversationId++,
+      name: `Conversation ${this.nextConversationId}`,
+      participants: createConversationInput.participantIds,
+      messages: [],
+      createdAt: now,
+      updatedAt: now,
+      isGroup: createConversationInput.participantIds.length > 2
+    };
+    this.conversations.push(conversation);
+    return conversation;
+  }
+
+  async getConversation(id: number): Promise<Conversation | null> {
+    return this.conversations.find(conv => conv.id === id) || null;
+  }
+
+  async getUserConversations(userId: number): Promise<Conversation[]> {
+    return this.conversations.filter(conv => conv.participants.includes(userId));
+  }
+
+  async getConversationMessages(conversationId: number): Promise<Message[]> {
+    return this.messages.filter(msg => msg.conversationId === conversationId);
+  }
+
+  async sendMessage(sendMessageInput: SendMessageInput): Promise<Message> {
+    const sender = await this.usersService.findOne(sendMessageInput.senderId);
+    if (!sender) {
+      throw new Error('Sender not found');
+    }
+
+    const message: Message = {
+      id: this.nextMessageId++,
+      content: sendMessageInput.content,
+      senderId: sendMessageInput.senderId,
+      sender: sender,
+      conversationId: sendMessageInput.conversationId,
+      timestamp: new Date(),
+      isRead: false,
+      readBy: []
+    };
+    
+    const conversation = await this.getConversation(sendMessageInput.conversationId);
+    if (conversation) {
+      conversation.messages.push(message.id);
+      conversation.updatedAt = message.timestamp;
+    }
+    
+    this.messages.push(message);
+    return message;
+  }
+
+  async queueMessage(sendMessageInput: SendMessageInput): Promise<void> {
+    await this.messagesQueue.add('saveMessage', sendMessageInput);
+  }
 
   async create(createConversationInput: CreateConversationInput): Promise<Conversation> {
     const participants = await Promise.all(
@@ -43,35 +108,6 @@ export class ConversationsService {
     return this.conversations.filter(conv => 
       conv.participants.some(p => p.id === userId)
     );
-  }
-
-  async sendMessage(senderId: string, input: SendMessageInput): Promise<Message> {
-    const conversation = await this.findOne(input.conversationId);
-    const sender = await this.usersService.findOne(senderId);
-
-    if (!conversation || !sender) {
-      throw new Error('Conversation or sender not found');
-    }
-
-    const message: Message = {
-      id: Date.now().toString(), // Temporaire, à remplacer par un UUID
-      content: input.content,
-      sender,
-      conversationId: conversation.id,
-      createdAt: new Date(),
-      isRead: false,
-      readBy: [],
-      attachmentUrl: input.attachmentUrl,
-      attachmentType: input.attachmentType,
-    };
-
-    this.messages.push(message);
-    conversation.messages.push(message);
-    conversation.lastMessageSentBy = sender;
-    conversation.lastMessageSentAt = message.createdAt;
-    conversation.updatedAt = message.createdAt;
-
-    return message;
   }
 
   async markMessageAsRead(messageId: string, userId: string): Promise<Message | undefined> {

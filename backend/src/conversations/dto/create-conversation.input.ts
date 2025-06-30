@@ -1,4 +1,4 @@
-import { Field, ID, InputType } from '@nestjs/graphql';
+import { Field, ID, InputType, Int } from '@nestjs/graphql';
 import { IsArray, IsBoolean, IsString, MinLength } from 'class-validator';
 
 @InputType()
@@ -8,9 +8,9 @@ export class CreateConversationInput {
   @MinLength(1)
   name: string;
 
-  @Field(() => [ID])
+  @Field(() => [Int])
   @IsArray()
-  participantIds: string[];
+  participantIds: number[];
 
   @Field(() => Boolean)
   @IsBoolean()

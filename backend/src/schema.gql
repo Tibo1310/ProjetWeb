@@ -4,20 +4,20 @@
 
 type Conversation {
   createdAt: DateTime!
-  id: ID!
+  id: Int!
   isGroup: Boolean!
   lastMessageSentAt: DateTime
   lastMessageSentBy: User
-  messages: [Message!]!
+  messages: [Int!]!
   name: String!
-  participants: [User!]!
+  participants: [Int!]!
   updatedAt: DateTime!
 }
 
 input CreateConversationInput {
   isGroup: Boolean!
   name: String!
-  participantIds: [ID!]!
+  participantIds: [Int!]!
 }
 
 input CreateUserInput {
@@ -35,24 +35,25 @@ type Message {
   attachmentType: String
   attachmentUrl: String
   content: String!
-  conversationId: ID!
-  createdAt: DateTime!
-  id: ID!
+  conversationId: Int!
+  id: Int!
   isRead: Boolean!
-  readBy: [User!]!
+  readBy: [Int!]!
   sender: User!
+  senderId: Int!
+  timestamp: DateTime!
 }
 
 type Mutation {
-  createConversation(input: CreateConversationInput!): Conversation!
+  createConversation(createConversationInput: CreateConversationInput!): Conversation!
   createUser(input: CreateUserInput!): User!
-  sendMessage(input: SendMessageInput!, senderId: ID!): Message!
+  sendMessage(sendMessageInput: SendMessageInput!): Message!
 }
 
 type Query {
-  conversation(id: ID!): Conversation
+  conversationMessages(conversationId: Int!): [Message!]!
   user(id: ID!): User
-  userConversations(userId: ID!): [Conversation!]!
+  userConversations(userId: Int!): [Conversation!]!
   users: [User!]!
 }
 
@@ -60,13 +61,14 @@ input SendMessageInput {
   attachmentType: String
   attachmentUrl: String
   content: String!
-  conversationId: ID!
+  conversationId: Int!
+  senderId: Int!
 }
 
 type User {
   createdAt: DateTime!
   email: String!
-  id: ID!
+  id: Int!
   isOnline: Boolean!
   lastSeen: DateTime!
   username: String!

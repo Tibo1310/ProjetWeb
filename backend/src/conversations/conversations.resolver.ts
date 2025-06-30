@@ -1,7 +1,7 @@
-import { Args, ID, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
+import { ConversationsService } from './conversations.service';
 import { Conversation } from './models/conversation.model';
 import { Message } from './models/message.model';
-import { ConversationsService } from './conversations.service';
 import { CreateConversationInput } from './dto/create-conversation.input';
 import { SendMessageInput } from './dto/send-message.input';
 
@@ -10,36 +10,24 @@ export class ConversationsResolver {
   constructor(private readonly conversationsService: ConversationsService) {}
 
   @Query(() => [Conversation])
-  async userConversations(
-    @Args('userId', { type: () => ID }) userId: string,
-  ): Promise<Conversation[]> {
-    return this.conversationsService.findUserConversations(userId);
+  async userConversations(@Args('userId', { type: () => Int }) userId: number) {
+    return this.conversationsService.getUserConversations(userId);
   }
 
-  @Query(() => Conversation, { nullable: true })
-  async conversation(
-    @Args('id', { type: () => ID }) id: string,
-  ): Promise<Conversation | undefined> {
-    return this.conversationsService.findOne(id);
-  }
-
-  @ResolveField(() => [Message])
-  async messages(@Parent() conversation: Conversation): Promise<Message[]> {
-    return conversation.messages;
+  @Query(() => [Message])
+  async conversationMessages(@Args('conversationId', { type: () => Int }) conversationId: number) {
+    return this.conversationsService.getConversationMessages(conversationId);
   }
 
   @Mutation(() => Conversation)
-  async createConversation(
-    @Args('input') input: CreateConversationInput,
-  ): Promise<Conversation> {
-    return this.conversationsService.create(input);
+  async createConversation(@Args('createConversationInput') createConversationInput: CreateConversationInput) {
+    return this.conversationsService.createConversation(createConversationInput);
   }
 
   @Mutation(() => Message)
-  async sendMessage(
-    @Args('senderId', { type: () => ID }) senderId: string,
-    @Args('input') input: SendMessageInput,
-  ): Promise<Message> {
-    return this.conversationsService.sendMessage(senderId, input);
+  async sendMessage(@Args('sendMessageInput') sendMessageInput: SendMessageInput) {
+    // Au lieu de sauvegarder directement le message, on l'ajoute à la queue
+    await this.conversationsService.queueMessage(sendMessageInput);
+    return this.conversationsService.sendMessage(sendMessageInput);
   }
 } 
