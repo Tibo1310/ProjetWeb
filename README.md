@@ -49,7 +49,7 @@ npm run start:dev
   - Interface GraphQL Playground: Ouvrez l'URL dans votre navigateur
   - Test avec Postman:
     - Méthode: POST
-    - Body (GraphQL):
+    - Body > GraphQL (pour la derniere version) :
     ```graphql
     query {
       status {
@@ -57,6 +57,12 @@ npm run start:dev
       }
     }
     ```
+    ou
+    - Body > Raw > JSON (pour ancienne version de postman) :
+     ```{
+       "query": "query { status { result } }"
+     }
+     ```
     - Réponse attendue:
     ```json
     {
