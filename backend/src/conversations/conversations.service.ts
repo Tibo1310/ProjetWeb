@@ -23,7 +23,7 @@ export class ConversationsService {
     const now = new Date();
     const conversation: Conversation = {
       id: this.nextConversationId++,
-      name: `Conversation ${this.nextConversationId}`,
+      name: createConversationInput.name,
       participants: createConversationInput.participantIds,
       messages: [],
       createdAt: now,
@@ -77,50 +77,23 @@ export class ConversationsService {
     await this.messagesQueue.add('saveMessage', sendMessageInput);
   }
 
-  async create(createConversationInput: CreateConversationInput): Promise<Conversation> {
-    const participants = await Promise.all(
-      createConversationInput.participantIds.map(id => this.usersService.findOne(id))
-    );
-
-    const conversation: Conversation = {
-      id: Date.now().toString(), // Temporaire, à remplacer par un UUID
-      name: createConversationInput.name,
-      participants: participants.filter(p => p !== undefined),
-      messages: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      isGroup: createConversationInput.isGroup,
-    };
-
-    this.conversations.push(conversation);
-    return conversation;
-  }
-
   async findAll(): Promise<Conversation[]> {
     return this.conversations;
   }
 
-  async findOne(id: string): Promise<Conversation | undefined> {
-    return this.conversations.find(conv => conv.id === id);
-  }
-
-  async findUserConversations(userId: string): Promise<Conversation[]> {
-    return this.conversations.filter(conv => 
-      conv.participants.some(p => p.id === userId)
-    );
-  }
-
-  async markMessageAsRead(messageId: string, userId: string): Promise<Message | undefined> {
+  async markMessageAsRead(messageId: number, userId: number): Promise<Message | undefined> {
     const message = this.messages.find(m => m.id === messageId);
     const user = await this.usersService.findOne(userId);
-
-    if (message && user && !message.readBy.some(u => u.id === userId)) {
-      message.readBy.push(user);
-      if (message.readBy.length === (await this.findOne(message.conversationId))?.participants.length) {
+    
+    if (message && user && !message.readBy.includes(userId)) {
+      message.readBy.push(userId);
+      
+      const conversation = await this.getConversation(message.conversationId);
+      if (conversation && message.readBy.length === conversation.participants.length) {
         message.isRead = true;
       }
     }
-
+    
     return message;
   }
 } 

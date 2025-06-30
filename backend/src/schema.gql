@@ -15,7 +15,6 @@ type Conversation {
 }
 
 input CreateConversationInput {
-  isGroup: Boolean!
   name: String!
   participantIds: [Int!]!
 }
@@ -46,20 +45,18 @@ type Message {
 
 type Mutation {
   createConversation(createConversationInput: CreateConversationInput!): Conversation!
-  createUser(input: CreateUserInput!): User!
+  createUser(createUserInput: CreateUserInput!): User!
   sendMessage(sendMessageInput: SendMessageInput!): Message!
 }
 
 type Query {
   conversationMessages(conversationId: Int!): [Message!]!
-  user(id: ID!): User
+  user(id: Int!): User
   userConversations(userId: Int!): [Conversation!]!
   users: [User!]!
 }
 
 input SendMessageInput {
-  attachmentType: String
-  attachmentUrl: String
   content: String!
   conversationId: Int!
   senderId: Int!

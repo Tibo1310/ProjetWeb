@@ -21,7 +21,7 @@ export class Message {
   @Field()
   timestamp: Date;
 
-  @Field(() => Boolean)
+  @Field()
   isRead: boolean;
 
   @Field(() => [Int])

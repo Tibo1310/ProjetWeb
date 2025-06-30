@@ -22,7 +22,7 @@ export class Conversation {
   @Field()
   updatedAt: Date;
 
-  @Field(() => Boolean)
+  @Field()
   isGroup: boolean;
 
   @Field(() => User, { nullable: true })
