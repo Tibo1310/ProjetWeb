@@ -5,8 +5,8 @@ import { UsersModule } from './users/users.module';
 import { ConversationsModule } from './conversations/conversations.module';
 import { GraphQLStatusModule } from './graphql/graphql.module';
 import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
-import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule } from '@nestjs/config';
+import { CacheModule } from './cache/cache.module';
 
 @Module({
   imports: [
@@ -21,10 +21,7 @@ import { ConfigModule } from '@nestjs/config';
         'graphql-ws': true,
       },
     }),
-    CacheModule.register({
-      isGlobal: true,
-      ttl: 60 * 60 * 1000, // 1 hour
-    }),
+    CacheModule,
     UsersModule,
     ConversationsModule,
     GraphQLStatusModule,

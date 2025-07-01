@@ -2,27 +2,15 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type Conversation {
-  createdAt: DateTime!
-  id: Int!
-  isGroup: Boolean!
-  lastMessageSentAt: DateTime
-  lastMessageSentBy: User
-  messages: [Int!]!
-  name: String!
-  participants: [Int!]!
-  updatedAt: DateTime!
-}
-
-input CreateConversationInput {
-  name: String!
-  participantIds: [Int!]!
-}
-
-input CreateUserInput {
+type User {
+  id: ID!
+  username: String!
   email: String!
   password: String!
-  username: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  isOnline: Boolean!
+  conversationIds: [String!]!
 }
 
 """
@@ -31,47 +19,62 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 scalar DateTime
 
 type Message {
-  attachmentType: String
-  attachmentUrl: String
+  id: String!
   content: String!
-  conversationId: Int!
-  id: Int!
-  isRead: Boolean!
-  readBy: [Int!]!
-  sender: User!
-  senderId: Int!
-  timestamp: DateTime!
+  senderId: String!
+  conversationId: String!
+  createdAt: DateTime!
 }
 
-type Mutation {
-  createConversation(createConversationInput: CreateConversationInput!): Conversation!
-  createUser(createUserInput: CreateUserInput!): User!
-  sendMessage(sendMessageInput: SendMessageInput!): Message!
-}
-
-type Query {
-  conversationMessages(conversationId: Int!): [Message!]!
-  status: StatusResponse!
-  user(id: Int!): User
-  userConversations(userId: Int!): [Conversation!]!
-  users: [User!]!
-}
-
-input SendMessageInput {
-  content: String!
-  conversationId: Int!
-  senderId: Int!
+type Conversation {
+  id: String!
+  participantIds: [String!]!
+  participants: [User!]!
+  messages: [Message!]!
+  name: String!
+  isGroup: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
 }
 
 type StatusResponse {
   result: String!
 }
 
-type User {
-  createdAt: DateTime!
-  email: String!
-  id: Int!
-  isOnline: Boolean!
-  lastSeen: DateTime!
+type Query {
+  users: [User!]!
+  user(id: String!): User!
+  conversations: [Conversation!]!
+  conversation(id: String!): Conversation!
+  userConversations(userId: String!): [Conversation!]!
+  status: StatusResponse!
+}
+
+type Mutation {
+  createUser(createUserInput: CreateUserInput!): User!
+  setUserOnlineStatus(id: String!, isOnline: Boolean!): User!
+  createConversation(createConversationInput: CreateConversationInput!): Conversation!
+  sendMessage(sendMessageInput: SendMessageInput!): Message!
+}
+
+input CreateUserInput {
   username: String!
+  email: String!
+  password: String!
+}
+
+input CreateConversationInput {
+  participantIds: [String!]!
+  title: String
+  name: String!
+}
+
+input SendMessageInput {
+  content: String!
+  senderId: String!
+  conversationId: String!
+}
+
+type Subscription {
+  messageAdded: Message!
 }

@@ -1,0 +1,13 @@
+{
+  "name": "messenger-clone",
+  "version": "1.0.0",
+  "description": "A real-time chat application built with NestJS, GraphQL, and React",
+  "scripts": {
+    "start": "concurrently \"cd backend && npm run start:dev\" \"cd frontend && npm start\"",
+    "install": "concurrently \"cd backend && npm install\" \"cd frontend && npm install\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+} 
