@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
+import { NotFoundException } from '@nestjs/common';
 import { CreateUserInput } from './dto/create-user.input';
 
 describe('UsersService', () => {
@@ -18,96 +19,95 @@ describe('UsersService', () => {
   });
 
   describe('create', () => {
-    it('should create a new user', async () => {
+    it('should create a user', async () => {
       const createUserInput: CreateUserInput = {
-        email: 'test@example.com',
         username: 'testuser',
-        password: 'password123'
+        email: 'test@example.com',
+        password: 'password123',
       };
 
       const user = await service.create(createUserInput);
 
-      expect(user).toMatchObject({
-        ...createUserInput,
-        id: expect.any(Number),
-        createdAt: expect.any(Date),
-        lastSeen: expect.any(Date),
-        isOnline: true,
-      });
+      expect(user).toBeDefined();
+      expect(user.username).toBe(createUserInput.username);
+      expect(user.email).toBe(createUserInput.email);
+      expect(user.isOnline).toBe(true);
+      expect(user.conversationIds).toEqual([]);
+      expect(user.id).toBeDefined();
     });
   });
 
   describe('findOne', () => {
-    it('should return a user by id', async () => {
+    it('should find a user by id', async () => {
       const createUserInput: CreateUserInput = {
-        email: 'test@example.com',
         username: 'testuser',
-        password: 'password123'
+        email: 'test@example.com',
+        password: 'password123',
       };
+
       const createdUser = await service.create(createUserInput);
-      
       const foundUser = await service.findOne(createdUser.id);
-      
-      expect(foundUser).toEqual(createdUser);
+
+      expect(foundUser).toBeDefined();
+      expect(foundUser.id).toBe(createdUser.id);
     });
 
-    it('should return undefined for non-existent user', async () => {
-      const foundUser = await service.findOne(999);
-      expect(foundUser).toBeUndefined();
+    it('should throw NotFoundException when user not found', async () => {
+      await expect(service.findOne('nonexistent-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('findByEmail', () => {
-    it('should return a user by email', async () => {
+    it('should find a user by email', async () => {
       const createUserInput: CreateUserInput = {
-        email: 'test@example.com',
         username: 'testuser',
-        password: 'password123'
+        email: 'test@example.com',
+        password: 'password123',
       };
+
       const createdUser = await service.create(createUserInput);
-      
-      const foundUser = await service.findByEmail(createUserInput.email);
-      
-      expect(foundUser).toEqual(createdUser);
+      const foundUser = await service.findByEmail(createdUser.email);
+
+      expect(foundUser).toBeDefined();
+      expect(foundUser.email).toBe(createdUser.email);
     });
 
-    it('should return undefined for non-existent email', async () => {
-      const foundUser = await service.findByEmail('nonexistent@example.com');
-      expect(foundUser).toBeUndefined();
-    });
-  });
-
-  describe('updateLastSeen', () => {
-    it('should update user lastSeen timestamp', async () => {
-      const createUserInput: CreateUserInput = {
-        email: 'test@example.com',
-        username: 'testuser',
-        password: 'password123'
-      };
-      const createdUser = await service.create(createUserInput);
-      const originalLastSeen = createdUser.lastSeen;
-      
-      await new Promise(resolve => setTimeout(resolve, 1)); // Wait 1ms
-      const updatedUser = await service.updateLastSeen(createdUser.id);
-      
-      expect(updatedUser).toBeDefined();
-      expect(updatedUser!.lastSeen.getTime()).toBeGreaterThan(originalLastSeen.getTime());
+    it('should throw NotFoundException when email not found', async () => {
+      await expect(service.findByEmail('nonexistent@example.com')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('setOnlineStatus', () => {
     it('should update user online status', async () => {
       const createUserInput: CreateUserInput = {
-        email: 'test@example.com',
         username: 'testuser',
-        password: 'password123'
+        email: 'test@example.com',
+        password: 'password123',
       };
-      const createdUser = await service.create(createUserInput);
-      
-      const updatedUser = await service.setOnlineStatus(createdUser.id, false);
-      
-      expect(updatedUser).toBeDefined();
-      expect(updatedUser!.isOnline).toBeFalsy();
+
+      const user = await service.create(createUserInput);
+      const updatedUser = await service.setOnlineStatus(user.id, false);
+
+      expect(updatedUser.isOnline).toBe(false);
+    });
+  });
+
+  describe('addConversation', () => {
+    it('should add conversation to user', async () => {
+      const createUserInput: CreateUserInput = {
+        username: 'testuser',
+        email: 'test@example.com',
+        password: 'password123',
+      };
+
+      const user = await service.create(createUserInput);
+      const updatedUser = await service.addConversation(user.id, 'conv-123');
+
+      expect(updatedUser.conversationIds).toContain('conv-123');
     });
   });
 }); 

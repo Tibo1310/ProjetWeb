@@ -18,7 +18,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "test:integration": "newman run postman/ProjetWeb.postman_collection.json -e postman/environment.json -r cli,htmlextra --reporter-htmlextra-export ./newman/report.html"
+    "test:integration": "newman run postman/ProjetWeb.postman_collection.json -e postman/environment.json -r cli,htmlextra --reporter-htmlextra-export ./newman/report.html",
+    "test:load": "artillery run artillery.yml",
+    "test:load:report": "artillery run --output report.json artillery.yml && artillery report report.json"
   },
   "dependencies": {
     "@apollo/server": "^4.12.2",
@@ -55,6 +57,7 @@
     "@types/jest": "^29.5.14",
     "@types/node": "^22.10.7",
     "@types/supertest": "^6.0.2",
+    "artillery": "^2.0.23",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
