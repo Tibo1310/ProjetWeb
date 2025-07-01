@@ -148,3 +148,70 @@ subscription {
 
 ## Contribution
 Développé par Thibault Delattre dans le cadre du cours de Projet Web à EFREI Paris, supervisé par Jérôme Commaret.
+
+## CI/CD Pipeline
+
+### Configuration
+
+Le projet utilise GitHub Actions pour l'intégration et le déploiement continus. Le pipeline comprend trois étapes principales :
+
+1. **Test Stage**
+   - Exécution des tests unitaires
+   - Exécution des tests d'intégration
+   - Exécution des tests de performance
+   - Génération des rapports de couverture
+
+2. **Build Stage**
+   - Construction de l'image Docker
+   - Push vers Docker Hub
+   - Utilisation du cache pour optimiser les builds
+
+3. **Deploy Stage**
+   - Déploiement automatique sur Render.com via webhook
+   - Déclenchement uniquement sur la branche main/master
+
+### Secrets GitHub Requis
+
+Pour que le pipeline fonctionne, vous devez configurer les secrets GitHub suivants :
+
+```bash
+# Pour Docker Hub
+DOCKERHUB_USERNAME=votre-username
+DOCKERHUB_TOKEN=votre-token
+
+# Pour Render.com
+RENDER_DEPLOY_HOOK_URL=votre-url-webhook-render
+```
+
+Pour obtenir ces secrets :
+1. **Docker Hub** :
+   - Créez un compte sur Docker Hub
+   - Générez un token d'accès dans les paramètres de sécurité
+   - Ajoutez votre username et le token dans les secrets GitHub
+
+2. **Render.com** :
+   - Dans votre dashboard Render, allez dans le service concerné
+   - Dans l'onglet "Settings", trouvez "Deploy Hook"
+   - Copiez l'URL du webhook et ajoutez-la dans les secrets GitHub
+
+### Déploiement Local
+
+Pour exécuter l'application localement avec Docker :
+
+```bash
+# Démarrer tous les services
+docker-compose up -d
+
+# Voir les logs
+docker-compose logs -f
+
+# Arrêter les services
+docker-compose down
+```
+
+### Monitoring
+
+Le pipeline inclut :
+- Rapports de tests automatisés
+- Métriques de performance
+- Logs de déploiement
