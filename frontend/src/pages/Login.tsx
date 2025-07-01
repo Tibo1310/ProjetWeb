@@ -12,8 +12,8 @@ import {
 } from '@mui/material';
 
 const LOGIN_MUTATION = gql`
-  mutation Login($email: String!, $password: String!) {
-    login(email: $email, password: $password) {
+  mutation Login($loginInput: LoginInput!) {
+    login(loginInput: $loginInput) {
       token
       user {
         id
@@ -46,8 +46,10 @@ export default function Login() {
     try {
       await login({
         variables: {
-          email,
-          password,
+          loginInput: {
+            email,
+            password,
+          },
         },
       });
     } catch (err) {

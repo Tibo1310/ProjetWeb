@@ -1,23 +1,20 @@
-# Build stage
-FROM node:20-alpine as build
-
-WORKDIR /usr/src/app
-
-COPY package*.json ./
-RUN npm ci
-
-COPY . .
-RUN npm run build
-
-# Production stage
 FROM node:20-alpine
 
 WORKDIR /usr/src/app
 
+# Copy package files
 COPY package*.json ./
-RUN npm ci --only=production
 
-COPY --from=build /usr/src/app/dist ./dist
+# Install all dependencies
+RUN npm install --legacy-peer-deps
 
-EXPOSE 3000
-CMD ["node", "dist/main"] 
+# Copy the rest of the application
+COPY . .
+
+# Build the application
+RUN npm run build
+
+EXPOSE 3001
+
+# Use node to run the application
+CMD ["node", "dist/main.js"] 

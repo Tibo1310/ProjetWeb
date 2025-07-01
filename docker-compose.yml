@@ -1,6 +1,23 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:13-alpine
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=chat_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d chat_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
@@ -38,13 +55,16 @@ services:
     container_name: backend
     environment:
       - NODE_ENV=development
-      - PORT=3000
+      - PORT=3001
       - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - DATABASE_URL=postgresql://user:password@postgres:5432/chat_db
     ports:
-      - "3000:3000"
+      - "3001:3001"
     depends_on:
+      postgres:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
       redis:
@@ -55,5 +75,6 @@ services:
     command: npm run start:dev
 
 volumes:
+  postgres_data:
   rabbitmq_data:
   redis_data: 

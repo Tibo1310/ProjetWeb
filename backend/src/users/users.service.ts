@@ -1,83 +1,77 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateUserInput } from './dto/create-user.input';
-import { User } from './models/user.model';
+import { Injectable, NotFoundException, ConflictException, UnauthorizedException, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { CreateUserInput, LoginInput } from './dto/create-user.input';
+import { User } from './models/user.entity';
 import * as bcrypt from 'bcrypt';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Inject } from '@nestjs/common';
-import { Cache } from 'cache-manager';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class UsersService {
-  private users: User[] = [];
-
+  private readonly logger = new Logger(UsersService.name);
+  
   constructor(
-    @Inject(CACHE_MANAGER) private cacheManager: Cache
+    @InjectRepository(User)
+    private usersRepository: Repository<User>
   ) {}
 
-  async create(createUserInput: CreateUserInput): Promise<User> {
-    const hashedPassword = await bcrypt.hash(createUserInput.password, 10);
-    
-    const user: User = {
-      id: Date.now().toString(),
-      email: createUserInput.email,
-      password: hashedPassword,
-      username: createUserInput.username,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      isOnline: false,
-      conversationIds: [],
-    };
-
-    this.users.push(user);
-    await this.cacheManager.set(`user:${user.id}`, user);
-    return user;
-  }
-
   async findAll(): Promise<User[]> {
-    return this.users;
+    return this.usersRepository.find();
   }
 
   async findOne(id: string): Promise<User> {
-    const cachedUser = await this.cacheManager.get<User>(`user:${id}`);
-    if (cachedUser) {
-      return cachedUser;
-    }
-
-    const user = this.users.find(user => user.id === id);
+    const user = await this.usersRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
-
-    await this.cacheManager.set(`user:${id}`, user);
     return user;
   }
 
   async findByEmail(email: string): Promise<User | undefined> {
-    const cachedUser = await this.cacheManager.get<User>(`user:email:${email}`);
-    if (cachedUser) {
-      return cachedUser;
-    }
-
-    const user = this.users.find(user => user.email === email);
-    if (user) {
-      await this.cacheManager.set(`user:email:${email}`, user);
-    }
-    return user;
+    return this.usersRepository.findOne({ where: { email } });
   }
 
-  async validateUser(email: string, password: string): Promise<User | null> {
-    const user = await this.findByEmail(email);
-    if (user && await bcrypt.compare(password, user.password)) {
-      return user;
+  async create(createUserInput: CreateUserInput): Promise<User> {
+    const existingUser = await this.findByEmail(createUserInput.email);
+    if (existingUser) {
+      throw new ConflictException('Email already exists');
     }
-    return null;
+
+    const hashedPassword = await bcrypt.hash(createUserInput.password, 10);
+    const user = this.usersRepository.create({
+      ...createUserInput,
+      password: hashedPassword,
+    });
+
+    return this.usersRepository.save(user);
+  }
+
+  async login(loginInput: LoginInput): Promise<{ token: string; user: User }> {
+    const user = await this.findByEmail(loginInput.email);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const isPasswordValid = await bcrypt.compare(loginInput.password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const token = uuidv4();
+
+    return {
+      token,
+      user: {
+        ...user,
+        password: undefined,
+      } as User,
+    };
   }
 
   async setOnlineStatus(id: string, isOnline: boolean): Promise<User> {
     const user = await this.findOne(id);
     user.isOnline = isOnline;
-    await this.cacheManager.set(`user:${id}`, user);
-    return user;
+    return this.usersRepository.save(user);
   }
 
   async addConversation(userId: string, conversationId: string): Promise<User> {
@@ -86,7 +80,6 @@ export class UsersService {
       user.conversationIds = [];
     }
     user.conversationIds.push(conversationId);
-    await this.cacheManager.set(`user:${userId}`, user);
-    return user;
+    return this.usersRepository.save(user);
   }
 }
