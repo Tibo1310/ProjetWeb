@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { BullModule } from '@nestjs/bull';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { AppController } from './app.controller';
@@ -8,16 +7,11 @@ import { HealthModule } from './health/health.module';
 import { UsersModule } from './users/users.module';
 import { ConversationsModule } from './conversations/conversations.module';
 import { GraphQLStatusModule } from './graphql/graphql.module';
+import { MessagesModule } from './messages/messages.module';
 import { join } from 'path';
 
 @Module({
   imports: [
-    BullModule.forRoot({
-      redis: {
-        host: 'localhost',
-        port: 6379,
-      },
-    }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
@@ -28,11 +22,16 @@ import { join } from 'path';
           'request.credentials': 'include',
         },
       },
+      subscriptions: {
+        'graphql-ws': true,
+        'subscriptions-transport-ws': true,
+      },
     }),
     HealthModule,
     UsersModule,
     ConversationsModule,
     GraphQLStatusModule,
+    MessagesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
