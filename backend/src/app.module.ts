@@ -1,37 +1,34 @@
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import { HealthModule } from './health/health.module';
 import { UsersModule } from './users/users.module';
 import { ConversationsModule } from './conversations/conversations.module';
 import { GraphQLStatusModule } from './graphql/graphql.module';
-import { MessagesModule } from './messages/messages.module';
-import { RedisCacheModule } from './cache/cache.module';
-import { join } from 'path';
+import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
+import { CacheModule } from '@nestjs/cache-manager';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
-      autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
-      sortSchema: true,
-      csrfPrevention: false,
-      playground: {
-        settings: {
-          'request.credentials': 'include',
-        },
-      },
+      autoSchemaFile: 'src/schema.gql',
+      playground: true,
       subscriptions: {
         'graphql-ws': true,
-        'subscriptions-transport-ws': true,
       },
     }),
-    HealthModule,
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 60 * 60 * 1000, // 1 hour
+    }),
     UsersModule,
     ConversationsModule,
     GraphQLStatusModule,
-    MessagesModule,
-    RedisCacheModule,
+    RabbitMQModule,
   ],
 })
-export class AppModule {}
+export class AppModule {} 

@@ -1,10 +1,10 @@
-import { ObjectType, Field, ID } from '@nestjs/graphql';
+import { ObjectType, Field } from '@nestjs/graphql';
 import { Message } from './message.model';
 import { User } from '../../users/models/user.model';
 
 @ObjectType()
 export class Conversation {
-  @Field(() => ID)
+  @Field()
   id: string;
 
   @Field(() => [String])
@@ -15,6 +15,12 @@ export class Conversation {
 
   @Field(() => [Message])
   messages: Message[];
+
+  @Field()
+  name: string;
+
+  @Field()
+  isGroup: boolean;
 
   @Field()
   createdAt: Date;

@@ -1,15 +1,13 @@
-import { InputType, Field, Int } from '@nestjs/graphql';
-import { IsString } from 'class-validator';
+import { InputType, Field } from '@nestjs/graphql';
 
 @InputType()
 export class SendMessageInput {
   @Field()
-  @IsString()
   content: string;
 
-  @Field(() => Int)
-  senderId: number;
+  @Field()
+  senderId: string;
 
-  @Field(() => Int)
-  conversationId: number;
+  @Field()
+  conversationId: string;
 } 

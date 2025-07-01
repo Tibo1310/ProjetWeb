@@ -1,17 +1,17 @@
-import { ObjectType, Field, ID } from '@nestjs/graphql';
+import { ObjectType, Field } from '@nestjs/graphql';
 
 @ObjectType()
 export class Message {
-  @Field(() => ID)
+  @Field()
   id: string;
 
   @Field()
   content: string;
 
-  @Field(() => ID)
+  @Field()
   senderId: string;
 
-  @Field(() => ID)
+  @Field()
   conversationId: string;
 
   @Field()

@@ -12,11 +12,17 @@ export class User {
   email: string;
 
   @Field()
+  password: string;
+
+  @Field()
   createdAt: Date;
+
+  @Field()
+  updatedAt: Date;
 
   @Field(() => Boolean)
   isOnline: boolean;
 
-  @Field(() => [String], { nullable: true })
-  conversationIds?: string[];
+  @Field(() => [String])
+  conversationIds: string[];
 } 

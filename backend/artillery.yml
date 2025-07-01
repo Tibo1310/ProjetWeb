@@ -1,1 +1,36 @@
- 
+config:
+  target: "http://localhost:3000/graphql"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm up"
+    - duration: 120
+      arrivalRate: 10
+      name: "Peak load"
+  payload:
+    path: "test/users.csv"
+    fields:
+      - "userId"
+      - "conversationId"
+
+scenarios:
+  - name: "Send and receive messages"
+    flow:
+      - post:
+          url: "/graphql"
+          json:
+            query: |
+              mutation SendMessage($input: SendMessageInput!) {
+                sendMessage(sendMessageInput: $input) {
+                  id
+                  content
+                  senderId
+                  conversationId
+                  createdAt
+                }
+              }
+            variables:
+              input:
+                content: "Test message"
+                senderId: "{{ userId }}"
+                conversationId: "{{ conversationId }}" 

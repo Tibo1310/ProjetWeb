@@ -12,4 +12,7 @@ export class CreateConversationInput {
   @IsOptional()
   @MinLength(1)
   title?: string;
+
+  @Field()
+  name: string;
 } 

@@ -1,17 +1,16 @@
-import { Resolver, Query, Mutation, Args, ResolveField, Parent } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Subscription } from '@nestjs/graphql';
+import { PubSub } from 'graphql-subscriptions';
 import { ConversationsService } from './conversations.service';
 import { Conversation } from './models/conversation.model';
+import { Message } from './models/message.model';
 import { CreateConversationInput } from './dto/create-conversation.input';
-import { Message } from '../messages/models/message.model';
-import { User } from '../users/models/user.model';
-import { UsersService } from '../users/users.service';
+import { SendMessageInput } from './dto/send-message.input';
+
+const pubSub = new PubSub();
 
 @Resolver(() => Conversation)
 export class ConversationsResolver {
-  constructor(
-    private readonly conversationsService: ConversationsService,
-    private readonly usersService: UsersService,
-  ) {}
+  constructor(private readonly conversationsService: ConversationsService) {}
 
   @Query(() => [Conversation])
   async conversations(): Promise<Conversation[]> {
@@ -35,12 +34,17 @@ export class ConversationsResolver {
     return this.conversationsService.create(createConversationInput);
   }
 
-  @ResolveField('participants', () => [User])
-  async getParticipants(@Parent() conversation: Conversation): Promise<User[]> {
-    return Promise.all(
-      conversation.participants.map(participant => 
-        this.usersService.findOne(participant.id)
-      )
-    );
+  @Mutation(() => Message)
+  async sendMessage(
+    @Args('sendMessageInput') sendMessageInput: SendMessageInput,
+  ): Promise<Message> {
+    const message = await this.conversationsService.addMessage(sendMessageInput);
+    pubSub.publish('messageAdded', { messageAdded: message });
+    return message;
+  }
+
+  @Subscription(() => Message)
+  messageAdded() {
+    return pubSub.asyncIterator('messageAdded');
   }
 } 
