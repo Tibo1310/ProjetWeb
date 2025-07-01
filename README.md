@@ -1,24 +1,51 @@
-# ProjetWeb - Application Web
+# Application de Messagerie Instantanée - Projet Web EFREI 2025
+> Développé avec NestJS, GraphQL et RabbitMQ
 
-## Description
-Application web développée dans le cadre du cours Projet Web: Déploiement, Nest.js, GraphQL, Message Queuing et Tests. L'objectif est de créer une messagerie instantanée avec déploiement continu.
+## Description du Projet
+Application de messagerie instantanée inspirée de Facebook Messenger, développée dans le cadre du cours Projet Web à EFREI Paris. Cette application démontre l'utilisation des technologies modernes de développement web et l'implémentation de patterns architecturaux avancés.
 
-## Fonctionnalités
+## Fonctionnalités Clés
+- Création et gestion de profils utilisateurs
+- Liste des utilisateurs (tous les profils créés)
+- Gestion des conversations
+- Détails des conversations et messages en temps réel
 
+## Stack Technologique
 
-## Technologies Utilisées
+### Backend
+- **NestJS** : Framework Node.js moderne avec support TypeScript natif
+- **GraphQL** : API Query Language avec Apollo Server
+- **RabbitMQ** : Message Broker pour la gestion asynchrone des messages
+- **TypeScript** : Langage de programmation typé
+- **WebSocket** : Pour les communications en temps réel
 
+### Architecture
+1. **Client (Web/Mobile)**
+   - Interactions via requêtes GraphQL
+   - Souscriptions WebSocket pour les mises à jour en temps réel
 
-## Setup
+2. **API NestJS/GraphQL**
+   - Queries (getConversations, getUsers, etc.)
+   - Mutations (sendMessage, createConversation, etc.)
+   - Subscriptions (onMessageSent, onConversationUpdated)
+
+3. **Worker/Listener (Microservice)**
+   - Traitement asynchrone des messages via RabbitMQ
+   - Persistance en base de données
+   - Publication via PubSub GraphQL
+
+## Installation et Démarrage
+
 ### Prérequis
-- Node.js
-- VSCode
-- Git
+- Node.js (v18 ou supérieur)
+- Docker et Docker Compose
+- npm ou yarn
 
-### Installation
+### Configuration
 1. Cloner le repository
 ```bash
-git clone https://github.com/Tibo1310/ProjetWeb
+git clone [URL_DU_REPO]
+cd [NOM_DU_PROJET]
 ```
 
 2. Installer les dépendances
@@ -26,244 +53,98 @@ git clone https://github.com/Tibo1310/ProjetWeb
 npm install
 ```
 
-3. Lancer l'application
+3. Configurer les variables d'environnement
 ```bash
-npm start
+cp .env.example .env
+# Éditer .env avec vos configurations
 ```
 
-4. Lancer le backend en mode développement
+4. Démarrer RabbitMQ
 ```bash
-cd backend
+docker-compose up -d
+```
+
+5. Lancer l'application
+```bash
 npm run start:dev
 ```
 
-5. Tester les endpoints
+## Tests
 
-- Health Check (REST API):
-  - URL: http://localhost:3000/health
-  - Méthode: GET
-  - Réponse attendue: `{"status":"OK","jobId":"1"}`
-
-- GraphQL API:
-  - URL: http://localhost:3000/graphql
-  - Interface GraphQL Playground: Ouvrez l'URL dans votre navigateur
-  - Test avec Postman:
-    - Méthode: POST
-    - Body > GraphQL (pour la derniere version) :
-    ```graphql
-    query {
-      status {
-        result
-      }
-    }
-    ```
-    ou
-    - Body > Raw > JSON (pour ancienne version de postman) :
-     ```{
-       "query": "query { status { result } }"
-     }
-     ```
-    - Réponse attendue:
-    ```json
-    {
-      "data": {
-        "status": {
-          "result": "ok"
-        }
-      }
-    }
-    ```
-
-## Contribution
-- Thibault Delattre
-
-## Implémentation Détaillée
-
-### 1. Architecture Backend
-Le backend est construit avec NestJS et utilise les technologies suivantes :
-- **GraphQL** pour l'API principale
-- **Bull** pour la gestion des files d'attente de messages
-- **Redis** comme broker de messages
-- **Jest** pour les tests unitaires
-- **Newman/Postman** pour les tests d'intégration
-
-### 2. Structure du Projet
-Le backend est organisé en modules :
-- `users` : Gestion des utilisateurs et de leurs statuts
-- `conversations` : Gestion des conversations et des messages
-- `health` : Endpoints de surveillance de l'application
-- `graphql` : Configuration et resolvers GraphQL
-
-### 3. Tests
-#### Tests Unitaires
-- Tests des services (UsersService, ConversationsService)
-- Tests des contrôleurs (HealthController)
-- Tests des resolvers GraphQL (StatusResolver)
-- Couverture de code complète
-
-#### Tests d'Intégration
-Collection Postman testant :
-- Health Check endpoint
-- GraphQL Status Query
-- Création d'utilisateurs
-- Création de conversations
-- Envoi de messages
-
-### 4. CI/CD Pipeline
-Pipeline GitHub Actions comprenant :
-1. **Test Stage** :
-   - Exécution des tests unitaires
-   - Démarrage d'un conteneur Redis pour les tests
-   - Exécution des tests d'intégration
-   - Génération et sauvegarde des rapports de tests
-
-2. **Build Stage** :
-   - Construction de l'image Docker
-   - Push vers Docker Hub avec versioning
-   - Utilisation du cache pour optimisation
-
-3. **Deploy Stage** :
-   - Déploiement automatique sur Render.com
-   - Déclenchement uniquement sur la branche master
-   - Utilisation de webhooks pour le déploiement
-
-### 5. Monitoring et Santé
-- Endpoint `/health` pour la surveillance
-- Intégration avec Bull pour la gestion des files d'attente
-- Logs et métriques pour le suivi des performances
-
-### 6. Sécurité
-- Protection CSRF désactivée pour le développement
-- Configuration sécurisée de GraphQL
-- Gestion des secrets via GitHub Secrets
-
-### 7. Commandes Importantes
-
-#### Développement
+### Tests Unitaires
 ```bash
-# Démarrer l'application en mode développement
-npm run start:dev
-
-# Démarrer l'application en mode debug
-npm run start:debug
-
-# Démarrer l'application en mode production
-npm run start:prod
+npm run test
 ```
 
-#### Tests
+### Tests d'Intégration
 ```bash
-# Exécuter les tests unitaires
-npm test
-
-# Exécuter les tests unitaires avec couverture
-npm run test:cov
-
-# Exécuter les tests unitaires en mode watch
-npm run test:watch
-
-# Exécuter les tests d'intégration avec Newman/Postman
-npm run test:integration
-
-# Exécuter les tests end-to-end
 npm run test:e2e
 ```
 
-#### Autres Commandes
+### Tests de Performance
+Utilisation d'Artillery pour les tests de charge :
 ```bash
-# Compiler l'application
-npm run build
-
-# Formater le code
-npm run format
-
-# Linter le code
-npm run lint
+npm run test:load
 ```
 
-#### Docker
-```bash
-# Construire l'image
-docker build -t projetweb-backend .
+## Documentation API
 
-# Démarrer le conteneur
-docker run -p 3000:3000 projetweb-backend
+### Queries GraphQL Principales
+```graphql
+# Récupérer les conversations
+query {
+  conversations {
+    id
+    participants {
+      id
+      username
+    }
+    messages {
+      content
+      createdAt
+    }
+  }
+}
 
-# Démarrer avec Docker Compose (inclut Redis)
-docker-compose up
+# Envoyer un message
+mutation {
+  sendMessage(input: {
+    content: "Hello!"
+    conversationId: "123"
+    senderId: "456"
+  }) {
+    id
+    content
+    createdAt
+  }
+}
+
+# Souscrire aux nouveaux messages
+subscription {
+  messageSent {
+    id
+    content
+    sender {
+      username
+    }
+  }
+}
 ```
 
-----------------------------
+## Optimisations et Performance
 
-## 1 - Etude de faisabilité
+### Gestion du N+1 Problem
+- Utilisation de DataLoader pour le batching des requêtes
+- Optimisation des requêtes GraphQL
 
-### NestJS
+### Mise en Cache
+- Cache des utilisateurs fréquemment accédés
+- Cache des conversations récentes
 
-NestJS est un framework Node.js progressif pour la construction d'applications côté serveur efficaces et évolutives. Principales caractéristiques de NestJS:
+### Scalabilité
+- Architecture microservices avec RabbitMQ
+- Support du clustering RabbitMQ
+- Gestion optimisée des WebSockets
 
-#### Architecture Modulaire
-- **Modules** : Unités de base qui encapsulent des fonctionnalités connexes
-- **Controllers** : Gestion des requêtes HTTP et délégation aux services
-- **Services** : Logique métier et interaction avec la base de données
-- **Providers** : Injection de dépendances pour une meilleure modularité
-- **Pipes** : Validation et transformation des données
-- **Guards** : Gestion de l'authentification et des autorisations
-- **Interceptors** : Manipulation des requêtes/réponses
-
-#### Avantages de NestJS
-1. **TypeScript natif** : Typage fort et meilleure maintenabilité
-2. **Architecture SOLID** : Principes de conception robustes
-3. **Extensibilité** : Large écosystème de modules
-4. **Support GraphQL intégré** : Parfait pour notre cas d'usage
-5. **Tests automatisés** : Outils de test intégrés
-
-### GraphQL
-
-GraphQL est un langage de requête pour les APIs qui présente plusieurs avantages et inconvénients pour notre projet de messagerie instantanée :
-
-#### Avantages
-1. **Requêtes flexibles** :
-   - Les clients peuvent demander exactement les données dont ils ont besoin
-   - Réduction de la sur-récupération ou sous-récupération de données
-   - Particulièrement utile pour les messages avec différents niveaux de détail
-
-2. **Performance optimisée** :
-   - Une seule requête pour obtenir des données reliées
-   - Réduction du nombre de requêtes réseau
-   - Idéal pour les conversations avec messages, utilisateurs et pièces jointes
-
-3. **Temps réel** :
-   - Support natif des subscriptions
-   - Parfait pour la messagerie instantanée
-   - Mise à jour en temps réel des conversations
-
-4. **Documentation automatique** :
-   - Schéma auto-documenté
-   - Introspection intégrée
-   - Facilite le développement front-end
-
-#### Inconvénients
-1. **Complexité initiale** :
-   - Courbe d'apprentissage plus raide
-   - Configuration plus complexe
-   - Nécessite une bonne compréhension des concepts
-
-2. **Cache** :
-   - Gestion du cache plus complexe
-   - Nécessite une stratégie de mise en cache adaptée
-
-3. **Sécurité** :
-   - Risque de requêtes trop coûteuses
-   - Nécessite la mise en place de limitations
-   - Protection contre les attaques par requêtes complexes
-
-4. **Monitoring** :
-   - Outils de surveillance spécifiques nécessaires
-   - Métriques différentes des APIs REST
-
-### Conclusion
-Pour notre projet de messagerie instantanée, la combinaison NestJS/GraphQL est particulièrement adaptée :
-- Architecture modulaire de NestJS pour une base solide
-- Capacités temps réel de GraphQL pour la messagerie instantanée
-- Support natif de TypeScript pour la sécurité du type
-- Excellent support des tests pour l'intégration continue
+## Contribution
+Développé par Thibault Delattre dans le cadre du cours de Projet Web à EFREI Paris, supervisé par Jérôme Commaret.
