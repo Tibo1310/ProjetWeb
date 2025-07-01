@@ -1,13 +1,12 @@
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { HealthModule } from './health/health.module';
 import { UsersModule } from './users/users.module';
 import { ConversationsModule } from './conversations/conversations.module';
 import { GraphQLStatusModule } from './graphql/graphql.module';
 import { MessagesModule } from './messages/messages.module';
+import { RedisCacheModule } from './cache/cache.module';
 import { join } from 'path';
 
 @Module({
@@ -32,8 +31,7 @@ import { join } from 'path';
     ConversationsModule,
     GraphQLStatusModule,
     MessagesModule,
+    RedisCacheModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}
