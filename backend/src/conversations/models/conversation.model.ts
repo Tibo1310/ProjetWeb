@@ -1,33 +1,24 @@
-import { Field, ID, ObjectType, Int } from '@nestjs/graphql';
+import { Field, ID, ObjectType } from '@nestjs/graphql';
+import { Message } from '../../messages/models/message.model';
 import { User } from '../../users/models/user.model';
-import { Message } from './message.model';
 
 @ObjectType()
 export class Conversation {
-  @Field(() => Int)
-  id: number;
+  @Field(() => ID)
+  id: string;
 
-  @Field()
-  name: string;
+  @Field(() => [User])
+  participants: User[];
 
-  @Field(() => [Int])
-  participants: number[];
-
-  @Field(() => [Int])
-  messages: number[];
+  @Field(() => [Message])
+  messages: Message[];
 
   @Field()
   createdAt: Date;
 
-  @Field()
-  updatedAt: Date;
-
-  @Field()
-  isGroup: boolean;
-
-  @Field(() => User, { nullable: true })
-  lastMessageSentBy?: User;
-
   @Field({ nullable: true })
-  lastMessageSentAt?: Date;
+  lastMessageAt?: Date;
+
+  @Field(() => String, { nullable: true })
+  title?: string;
 } 

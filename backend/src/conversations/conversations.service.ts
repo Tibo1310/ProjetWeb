@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { Conversation } from './models/conversation.model';
@@ -19,27 +19,57 @@ export class ConversationsService {
     private readonly usersService: UsersService
   ) {}
 
-  async createConversation(createConversationInput: CreateConversationInput): Promise<Conversation> {
-    const now = new Date();
+  async create(createConversationInput: CreateConversationInput): Promise<Conversation> {
+    // Verify all participants exist
+    const participants = await Promise.all(
+      createConversationInput.participantIds.map(id => this.usersService.findOne(id))
+    );
+
     const conversation: Conversation = {
-      id: this.nextConversationId++,
-      name: createConversationInput.name,
-      participants: createConversationInput.participantIds,
+      id: Date.now().toString(),
+      participants,
       messages: [],
-      createdAt: now,
-      updatedAt: now,
-      isGroup: createConversationInput.participantIds.length > 2
+      createdAt: new Date(),
+      title: createConversationInput.title,
     };
+
     this.conversations.push(conversation);
+
+    // Add conversation to each participant's list
+    await Promise.all(
+      participants.map(user => this.usersService.addConversation(user.id, conversation.id))
+    );
+
+    return conversation;
+  }
+
+  async findAll(): Promise<Conversation[]> {
+    return this.conversations;
+  }
+
+  async findOne(id: string): Promise<Conversation> {
+    const conversation = this.conversations.find(conv => conv.id === id);
+    if (!conversation) {
+      throw new NotFoundException(`Conversation with ID ${id} not found`);
+    }
+    return conversation;
+  }
+
+  async findUserConversations(userId: string): Promise<Conversation[]> {
+    return this.conversations.filter(conv => 
+      conv.participants.some(participant => participant.id === userId)
+    );
+  }
+
+  async addMessage(conversationId: string, message: Message): Promise<Conversation> {
+    const conversation = await this.findOne(conversationId);
+    conversation.messages.push(message);
+    conversation.lastMessageAt = message.createdAt;
     return conversation;
   }
 
   async getConversation(id: number): Promise<Conversation | null> {
     return this.conversations.find(conv => conv.id === id) || null;
-  }
-
-  async getUserConversations(userId: number): Promise<Conversation[]> {
-    return this.conversations.filter(conv => conv.participants.includes(userId));
   }
 
   async getConversationMessages(conversationId: number): Promise<Message[]> {
@@ -75,10 +105,6 @@ export class ConversationsService {
 
   async queueMessage(sendMessageInput: SendMessageInput): Promise<void> {
     await this.messagesQueue.add('saveMessage', sendMessageInput);
-  }
-
-  async findAll(): Promise<Conversation[]> {
-    return this.conversations;
   }
 
   async markMessageAsRead(messageId: number, userId: number): Promise<Message | undefined> {

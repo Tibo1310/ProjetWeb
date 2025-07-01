@@ -1,9 +1,9 @@
-import { Field, ID, ObjectType, Int } from '@nestjs/graphql';
+import { Field, ID, ObjectType } from '@nestjs/graphql';
 
 @ObjectType()
 export class User {
-  @Field(() => Int)
-  id: number;
+  @Field(() => ID)
+  id: string;
 
   @Field()
   username: string;
@@ -14,12 +14,9 @@ export class User {
   @Field()
   createdAt: Date;
 
-  @Field()
-  lastSeen: Date;
-
-  @Field()
+  @Field(() => Boolean)
   isOnline: boolean;
 
-  // Ne pas exposer le mot de passe via GraphQL
-  password: string;
+  @Field(() => [String], { nullable: true })
+  conversationIds?: string[];
 } 

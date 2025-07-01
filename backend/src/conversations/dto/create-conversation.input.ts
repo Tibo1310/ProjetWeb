@@ -1,13 +1,15 @@
-import { InputType, Field, Int } from '@nestjs/graphql';
-import { IsArray, IsString } from 'class-validator';
+import { Field, InputType } from '@nestjs/graphql';
+import { IsArray, IsNotEmpty, IsOptional, MinLength } from 'class-validator';
 
 @InputType()
 export class CreateConversationInput {
-  @Field()
-  @IsString()
-  name: string;
-
-  @Field(() => [Int])
+  @Field(() => [String])
   @IsArray()
-  participantIds: number[];
+  @IsNotEmpty()
+  participantIds: string[];
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @MinLength(1)
+  title?: string;
 } 
