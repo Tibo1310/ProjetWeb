@@ -1,35 +1,19 @@
-import { Field, ID, ObjectType, Int } from '@nestjs/graphql';
-import { User } from '../../users/models/user.model';
+import { ObjectType, Field, ID } from '@nestjs/graphql';
 
 @ObjectType()
 export class Message {
-  @Field(() => Int)
-  id: number;
+  @Field(() => ID)
+  id: string;
 
   @Field()
   content: string;
 
-  @Field(() => Int)
-  senderId: number;
+  @Field(() => ID)
+  senderId: string;
 
-  @Field(() => User)
-  sender: User;
-
-  @Field(() => Int)
-  conversationId: number;
+  @Field(() => ID)
+  conversationId: string;
 
   @Field()
-  timestamp: Date;
-
-  @Field()
-  isRead: boolean;
-
-  @Field(() => [Int])
-  readBy: number[];
-
-  @Field(() => String, { nullable: true })
-  attachmentUrl?: string;
-
-  @Field(() => String, { nullable: true })
-  attachmentType?: string;
+  createdAt: Date;
 } 

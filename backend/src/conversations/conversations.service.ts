@@ -6,6 +6,8 @@ import { Message } from './models/message.model';
 import { CreateConversationInput } from './dto/create-conversation.input';
 import { SendMessageInput } from './dto/send-message.input';
 import { UsersService } from '../users/users.service';
+import { CacheService } from '../cache/cache.service';
+import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
 
 @Injectable()
 export class ConversationsService {
@@ -16,30 +18,33 @@ export class ConversationsService {
 
   constructor(
     @InjectQueue('messages') private messagesQueue: Queue,
-    private readonly usersService: UsersService
+    private readonly usersService: UsersService,
+    private readonly cacheService: CacheService,
+    private readonly rabbitMQService: RabbitMQService,
   ) {}
 
   async create(createConversationInput: CreateConversationInput): Promise<Conversation> {
-    // Verify all participants exist
+    // Vérifier et récupérer les participants
     const participants = await Promise.all(
       createConversationInput.participantIds.map(id => this.usersService.findOne(id))
     );
 
     const conversation: Conversation = {
       id: Date.now().toString(),
+      participantIds: createConversationInput.participantIds,
       participants,
       messages: [],
       createdAt: new Date(),
-      title: createConversationInput.title,
+      updatedAt: new Date(),
     };
 
-    this.conversations.push(conversation);
-
-    // Add conversation to each participant's list
+    // Mettre à jour les conversations des participants
     await Promise.all(
-      participants.map(user => this.usersService.addConversation(user.id, conversation.id))
+      conversation.participantIds.map(id => this.usersService.addConversation(id, conversation.id))
     );
 
+    this.conversations.push(conversation);
+    await this.cacheService.cacheConversation(conversation.id, conversation);
     return conversation;
   }
 
@@ -48,24 +53,52 @@ export class ConversationsService {
   }
 
   async findOne(id: string): Promise<Conversation> {
+    // Try to get from cache first
+    const cachedConversation = await this.cacheService.getCachedConversation(id);
+    if (cachedConversation) {
+      return cachedConversation;
+    }
+
+    // If not in cache, get from "database"
     const conversation = this.conversations.find(conv => conv.id === id);
     if (!conversation) {
       throw new NotFoundException(`Conversation with ID ${id} not found`);
     }
+
+    // Cache the conversation for future requests
+    await this.cacheService.cacheConversation(id, conversation);
     return conversation;
   }
 
   async findUserConversations(userId: string): Promise<Conversation[]> {
-    return this.conversations.filter(conv => 
-      conv.participants.some(participant => participant.id === userId)
-    );
+    return this.conversations.filter(conv => conv.participantIds.includes(userId));
   }
 
-  async addMessage(conversationId: string, message: Message): Promise<Conversation> {
-    const conversation = await this.findOne(conversationId);
+  async addMessage(sendMessageInput: SendMessageInput): Promise<Message> {
+    const conversation = await this.findOne(sendMessageInput.conversationId);
+    
+    const message: Message = {
+      id: Date.now().toString(),
+      content: sendMessageInput.content,
+      senderId: sendMessageInput.senderId,
+      conversationId: sendMessageInput.conversationId,
+      createdAt: new Date(),
+    };
+
     conversation.messages.push(message);
-    conversation.lastMessageAt = message.createdAt;
-    return conversation;
+    conversation.updatedAt = new Date();
+
+    // Update cache
+    await this.cacheService.cacheConversation(conversation.id, conversation);
+    
+    // Cache recent messages
+    const recentMessages = conversation.messages.slice(-20); // Keep last 20 messages
+    await this.cacheService.cacheRecentMessages(conversation.id, recentMessages);
+
+    // Publish message to RabbitMQ for real-time updates
+    await this.rabbitMQService.sendMessage('chat.message.created', message);
+
+    return message;
   }
 
   async getConversation(id: number): Promise<Conversation | null> {
@@ -121,5 +154,22 @@ export class ConversationsService {
     }
     
     return message;
+  }
+
+  async getRecentMessages(conversationId: string): Promise<Message[]> {
+    // Try to get recent messages from cache
+    const cachedMessages = await this.cacheService.getCachedRecentMessages(conversationId);
+    if (cachedMessages && cachedMessages.length > 0) {
+      return cachedMessages;
+    }
+
+    // If not in cache, get from conversation
+    const conversation = await this.findOne(conversationId);
+    const recentMessages = conversation.messages.slice(-20); // Keep last 20 messages
+    
+    // Cache the recent messages
+    await this.cacheService.cacheRecentMessages(conversationId, recentMessages);
+    
+    return recentMessages;
   }
 } 

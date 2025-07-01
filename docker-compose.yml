@@ -3,10 +3,17 @@ version: '3.8'
 services:
   redis:
     image: redis:latest
+    container_name: chat-redis
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
   rabbitmq:
     image: rabbitmq:3-management
     container_name: chat-rabbitmq
@@ -34,10 +41,13 @@ services:
     environment:
       - NODE_ENV=development
       - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
+      - REDIS_URL=redis://redis:6379
     volumes:
       - ./backend:/app
       - /app/node_modules
     depends_on:
+      redis:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
     command: npm run start:dev
