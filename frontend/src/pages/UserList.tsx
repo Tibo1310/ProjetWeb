@@ -121,7 +121,7 @@ export default function UserList() {
                 color={user.isOnline ? 'success' : 'default'}
                 size="small"
                 sx={{
-                  color: user.isOnline ? '#2e7d32' : 'text.secondary',
+                  color: user.isOnline ? '#2e7d32' : '#000000',
                   bgcolor: user.isOnline ? '#e8f5e9' : '#f5f5f5',
                   '& .MuiChip-label': {
                     fontWeight: user.isOnline ? 600 : 400,
