@@ -151,12 +151,17 @@ export default function Layout() {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
+          height: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          p: 0,
         }}
       >
         <Toolbar />
-        <Outlet />
+        <Box sx={{ flex: 1, overflow: 'hidden' }}>
+          <Outlet />
+        </Box>
       </Box>
     </Box>
   );

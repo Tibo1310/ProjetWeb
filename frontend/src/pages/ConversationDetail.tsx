@@ -147,12 +147,22 @@ export default function ConversationDetail() {
   const conversation: Conversation = data.conversation;
 
   return (
-    <Container>
+    <Container
+      sx={{
+        height: '100%',
+        padding: '0 !important',
+        maxWidth: 'none !important',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <Paper
         sx={{
-          height: 'calc(100vh - 140px)',
+          flex: 1,
           display: 'flex',
           flexDirection: 'column',
+          borderRadius: 0,
+          overflow: 'hidden',
         }}
       >
         <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
@@ -172,42 +182,44 @@ export default function ConversationDetail() {
             p: 2,
           }}
         >
-          {conversation.messages.map((message: Message) => {
-            const isCurrentUser = message.senderId === currentUser.id;
-            const sender = conversation.participants.find(p => p.id === message.senderId);
+          <div ref={messagesEndRef}>
+            {conversation.messages.map((message: Message) => {
+              const isCurrentUser = message.senderId === currentUser.id;
+              const sender = conversation.participants.find(p => p.id === message.senderId);
 
-            return (
-              <ListItem
-                key={message.id}
-                sx={{
-                  flexDirection: 'column',
-                  alignItems: isCurrentUser ? 'flex-end' : 'flex-start',
-                  mb: 1,
-                }}
-              >
-                <Box
+              return (
+                <ListItem
+                  key={message.id}
                   sx={{
-                    maxWidth: '70%',
-                    bgcolor: isCurrentUser ? 'primary.main' : 'grey.300',
-                    color: isCurrentUser ? 'white' : 'text.primary',
-                    borderRadius: 2,
-                    p: 1,
+                    flexDirection: 'column',
+                    alignItems: isCurrentUser ? 'flex-end' : 'flex-start',
+                    mb: 1,
+                    p: 0,
                   }}
                 >
-                  {!isCurrentUser && (
-                    <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
-                      {sender?.username}
+                  <Box
+                    sx={{
+                      maxWidth: '70%',
+                      bgcolor: isCurrentUser ? 'primary.main' : 'grey.300',
+                      color: isCurrentUser ? 'white' : 'text.primary',
+                      borderRadius: 2,
+                      p: 1,
+                    }}
+                  >
+                    {!isCurrentUser && (
+                      <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>
+                        {sender?.username}
+                      </Typography>
+                    )}
+                    <Typography>{message.content}</Typography>
+                    <Typography variant="caption" sx={{ opacity: 0.7, display: 'block' }}>
+                      {new Date(message.createdAt).toLocaleTimeString()}
                     </Typography>
-                  )}
-                  <Typography>{message.content}</Typography>
-                  <Typography variant="caption" sx={{ opacity: 0.7 }}>
-                    {new Date(message.createdAt).toLocaleTimeString()}
-                  </Typography>
-                </Box>
-              </ListItem>
-            );
-          })}
-          <div ref={messagesEndRef} />
+                  </Box>
+                </ListItem>
+              );
+            })}
+          </div>
         </List>
 
         <Divider />
@@ -217,22 +229,21 @@ export default function ConversationDetail() {
           onSubmit={handleSendMessage}
           sx={{
             p: 2,
-            bgcolor: 'background.paper',
             display: 'flex',
             gap: 1,
+            bgcolor: 'background.paper',
           }}
         >
           <TextField
             fullWidth
+            size="small"
             placeholder="Type a message..."
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            variant="outlined"
-            size="small"
           />
           <IconButton
-            color="primary"
             type="submit"
+            color="primary"
             disabled={!newMessage.trim()}
           >
             <SendIcon />
