@@ -19,8 +19,9 @@ import {
   Autocomplete,
   Chip,
   Box,
+  IconButton,
 } from '@mui/material';
-import { Group as GroupIcon, Search as SearchIcon } from '@mui/icons-material';
+import { Group as GroupIcon, Search as SearchIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
 const GET_USERS = gql`
   query GetUsers {
@@ -63,6 +64,25 @@ const GET_CONVERSATIONS = gql`
   }
 `;
 
+const UPDATE_CONVERSATION = gql`
+  mutation UpdateConversation($input: UpdateConversationInput!) {
+    updateConversation(updateConversationInput: $input) {
+      id
+      name
+      participants {
+        id
+        username
+      }
+    }
+  }
+`;
+
+const DELETE_CONVERSATION = gql`
+  mutation DeleteConversation($id: String!) {
+    deleteConversation(id: $id)
+  }
+`;
+
 interface Participant {
   id: string;
   username: string;
@@ -89,8 +109,10 @@ interface User {
 
 export default function ConversationList() {
   const navigate = useNavigate();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newConversationName, setNewConversationName] = useState('');
+  const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const [name, setName] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
   
   const { loading: loadingConversations, error: errorConversations, data: conversationsData } = useQuery(GET_CONVERSATIONS);
@@ -100,24 +122,80 @@ export default function ConversationList() {
     refetchQueries: [{ query: GET_CONVERSATIONS }],
   });
 
-  const handleCreateConversation = async () => {
-    if (!newConversationName || selectedUsers.length === 0) return;
+  const [updateConversation] = useMutation(UPDATE_CONVERSATION, {
+    refetchQueries: [{ query: GET_CONVERSATIONS }],
+  });
+
+  const [deleteConversation] = useMutation(DELETE_CONVERSATION, {
+    refetchQueries: [{ query: GET_CONVERSATIONS }],
+  });
+
+  const handleCreateOpen = () => {
+    setOpen(true);
+    setName('');
+    setSelectedUsers([]);
+  };
+
+  const handleEditOpen = (conversation: Conversation) => {
+    setSelectedConversation(conversation);
+    setName(conversation.name);
+    setSelectedUsers(conversation.participants);
+    setEditOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setEditOpen(false);
+    setSelectedConversation(null);
+  };
+
+  const handleCreateSave = async () => {
+    if (!name || selectedUsers.length === 0) return;
     
     try {
       await createConversation({
         variables: {
           input: {
-            name: newConversationName,
+            name,
             participantIds: selectedUsers.map(user => user.id),
           },
         },
       });
       
-      setIsDialogOpen(false);
-      setNewConversationName('');
-      setSelectedUsers([]);
+      handleClose();
     } catch (error) {
       console.error('Error creating conversation:', error);
+    }
+  };
+
+  const handleEditSave = async () => {
+    if (!selectedConversation) return;
+
+    try {
+      await updateConversation({
+        variables: {
+          input: {
+            id: selectedConversation.id,
+            name,
+            participantIds: selectedUsers.map(user => user.id),
+          },
+        },
+      });
+      handleClose();
+    } catch (error) {
+      console.error('Error updating conversation:', error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this conversation?')) {
+      try {
+        await deleteConversation({
+          variables: { id },
+        });
+      } catch (error) {
+        console.error('Error deleting conversation:', error);
+      }
     }
   };
 
@@ -155,30 +233,46 @@ export default function ConversationList() {
         {conversationsData.conversations.map((conversation: Conversation) => (
           <ListItem
             key={conversation.id}
-            button
-            onClick={() => navigate(`/conversations/${conversation.id}`)}
             sx={{
-              mb: 1,
-              bgcolor: 'background.paper',
-              borderRadius: 1,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              cursor: 'pointer',
               '&:hover': {
-                bgcolor: 'action.hover',
+                backgroundColor: 'rgba(0, 0, 0, 0.04)',
               },
             }}
           >
-            <ListItemAvatar>
-              <Avatar>
-                <GroupIcon />
-              </Avatar>
-            </ListItemAvatar>
-            <ListItemText
-              primary={conversation.name}
-              secondary={
-                <Typography variant="body2" color="text.secondary">
-                  {conversation.participants.map(p => p.username).join(', ')}
-                </Typography>
-              }
-            />
+            <Box
+              onClick={() => navigate(`/conversations/${conversation.id}`)}
+              sx={{ flexGrow: 1 }}
+            >
+              <ListItemText
+                primary={conversation.name}
+                secondary={`${conversation.participants.length} participants`}
+              />
+            </Box>
+            <Box>
+              <IconButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEditOpen(conversation);
+                }}
+                size="small"
+              >
+                <EditIcon />
+              </IconButton>
+              <IconButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(conversation.id);
+                }}
+                size="small"
+                color="error"
+              >
+                <DeleteIcon />
+              </IconButton>
+            </Box>
           </ListItem>
         ))}
       </List>
@@ -187,7 +281,7 @@ export default function ConversationList() {
         variant="contained"
         color="primary"
         size="large"
-        onClick={() => setIsDialogOpen(true)}
+        onClick={handleCreateOpen}
         sx={{
           position: 'fixed',
           bottom: 0,
@@ -204,20 +298,22 @@ export default function ConversationList() {
       </Button>
 
       <Dialog 
-        open={isDialogOpen} 
-        onClose={() => setIsDialogOpen(false)}
+        open={open || editOpen} 
+        onClose={handleClose}
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Create New Conversation</DialogTitle>
+        <DialogTitle>
+          {editOpen ? 'Edit Conversation' : 'Create New Conversation'}
+        </DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
             margin="dense"
             label="Conversation Name"
             fullWidth
-            value={newConversationName}
-            onChange={(e) => setNewConversationName(e.target.value)}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             sx={{ mb: 2 }}
           />
           <Autocomplete
@@ -255,19 +351,13 @@ export default function ConversationList() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => {
-            setIsDialogOpen(false);
-            setNewConversationName('');
-            setSelectedUsers([]);
-          }}>
-            Cancel
-          </Button>
+          <Button onClick={handleClose}>Cancel</Button>
           <Button 
-            onClick={handleCreateConversation} 
+            onClick={editOpen ? handleEditSave : handleCreateSave} 
             variant="contained"
-            disabled={!newConversationName || selectedUsers.length === 0}
+            disabled={!name || selectedUsers.length === 0}
           >
-            Create
+            {editOpen ? 'Save Changes' : 'Create'}
           </Button>
         </DialogActions>
       </Dialog>

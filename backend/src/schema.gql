@@ -59,6 +59,8 @@ type Mutation {
   login(loginInput: LoginInput!): AuthResponse!
   setUserOnlineStatus(id: String!, isOnline: Boolean!): User!
   createConversation(createConversationInput: CreateConversationInput!): Conversation!
+  updateConversation(updateConversationInput: UpdateConversationInput!): Conversation!
+  deleteConversation(id: String!): Boolean!
   sendMessage(sendMessageInput: SendMessageInput!): Message!
 }
 
@@ -77,6 +79,12 @@ input CreateConversationInput {
   participantIds: [String!]!
   title: String
   name: String!
+}
+
+input UpdateConversationInput {
+  id: String!
+  name: String!
+  participantIds: [String!]!
 }
 
 input SendMessageInput {

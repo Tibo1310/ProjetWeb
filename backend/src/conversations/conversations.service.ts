@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Conversation } from './models/conversation.model';
 import { Message } from './models/message.model';
 import { CreateConversationInput } from './dto/create-conversation.input';
+import { UpdateConversationInput } from './dto/update-conversation.input';
 import { SendMessageInput } from './dto/send-message.input';
 import { UsersService } from '../users/users.service';
 import { CacheService } from '../cache/cache.service';
@@ -34,7 +35,7 @@ export class ConversationsService {
     };
 
     this.conversations.push(conversation);
-    await this.cacheService.cacheConversation(conversation.id, conversation);
+    await this.cacheService.set(`conversation:${conversation.id}`, conversation);
     return conversation;
   }
 
@@ -43,7 +44,7 @@ export class ConversationsService {
   }
 
   async findOne(id: string): Promise<Conversation> {
-    const cachedConversation = await this.cacheService.getCachedConversation(id);
+    const cachedConversation = await this.cacheService.get<Conversation>(`conversation:${id}`);
     if (cachedConversation) {
       return cachedConversation;
     }
@@ -53,12 +54,50 @@ export class ConversationsService {
       throw new NotFoundException(`Conversation with ID ${id} not found`);
     }
 
-    await this.cacheService.cacheConversation(id, conversation);
+    await this.cacheService.set(`conversation:${id}`, conversation);
     return conversation;
   }
 
   async findUserConversations(userId: string): Promise<Conversation[]> {
     return this.conversations.filter(conv => conv.participantIds.includes(userId));
+  }
+
+  async update(updateConversationInput: UpdateConversationInput): Promise<Conversation> {
+    const conversationIndex = this.conversations.findIndex(conv => conv.id === updateConversationInput.id);
+    if (conversationIndex === -1) {
+      throw new NotFoundException(`Conversation with ID ${updateConversationInput.id} not found`);
+    }
+
+    const participants = await Promise.all(
+      updateConversationInput.participantIds.map(id => this.usersService.findOne(id))
+    );
+
+    const updatedConversation: Conversation = {
+      ...this.conversations[conversationIndex],
+      name: updateConversationInput.name,
+      participantIds: updateConversationInput.participantIds,
+      participants,
+      isGroup: participants.length > 2,
+      updatedAt: new Date(),
+    };
+
+    this.conversations[conversationIndex] = updatedConversation;
+    await this.cacheService.set(`conversation:${updatedConversation.id}`, updatedConversation);
+    
+    return updatedConversation;
+  }
+
+  async delete(id: string): Promise<boolean> {
+    const conversationIndex = this.conversations.findIndex(conv => conv.id === id);
+    if (conversationIndex === -1) {
+      throw new NotFoundException(`Conversation with ID ${id} not found`);
+    }
+
+    this.conversations.splice(conversationIndex, 1);
+    await this.cacheService.del(`conversation:${id}`);
+    await this.cacheService.del(`messages:${id}`);
+    
+    return true;
   }
 
   async addMessage(sendMessageInput: SendMessageInput): Promise<Message> {
@@ -75,18 +114,15 @@ export class ConversationsService {
     conversation.messages.push(message);
     conversation.updatedAt = new Date();
 
-    await this.cacheService.cacheConversation(conversation.id, conversation);
-    
-    const recentMessages = conversation.messages.slice(-20);
-    await this.cacheService.cacheRecentMessages(conversation.id, recentMessages);
-
+    await this.cacheService.set(`conversation:${conversation.id}`, conversation);
+    await this.cacheService.set(`messages:${conversation.id}`, conversation.messages.slice(-20));
     await this.rabbitMQService.sendMessage('chat.message.created', message);
 
     return message;
   }
 
   async getRecentMessages(conversationId: string): Promise<Message[]> {
-    const cachedMessages = await this.cacheService.getCachedRecentMessages(conversationId);
+    const cachedMessages = await this.cacheService.get<Message[]>(`messages:${conversationId}`);
     if (cachedMessages && cachedMessages.length > 0) {
       return cachedMessages;
     }
@@ -94,7 +130,7 @@ export class ConversationsService {
     const conversation = await this.findOne(conversationId);
     const recentMessages = conversation.messages.slice(-20);
     
-    await this.cacheService.cacheRecentMessages(conversationId, recentMessages);
+    await this.cacheService.set(`messages:${conversationId}`, recentMessages);
     
     return recentMessages;
   }
