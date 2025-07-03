@@ -17,6 +17,7 @@ import {
   Box,
   Avatar,
   AvatarGroup,
+  Skeleton,
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
 
@@ -210,7 +211,36 @@ export default function ConversationList() {
   };
 
   if (errorConversations) return <div>Error: {errorConversations.message}</div>;
-  if (loadingConversations) return <div>Loading...</div>;
+  if (loadingConversations) return (
+    <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Typography variant="h5" sx={{ fontWeight: 600, color: '#fff', mb: 3, borderBottom: '2px solid rgba(255, 255, 255, 0.1)', paddingBottom: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        Conversations
+        <Skeleton variant="rectangular" width={120} height={36} sx={{ borderRadius: '4px' }} />
+      </Typography>
+      <List sx={{ gap: 2, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'auto' }}>
+        {[1, 2, 3].map((index) => (
+          <ListItem
+            key={index}
+            sx={{
+              bgcolor: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: 2,
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              pl: 3,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+              <Skeleton variant="circular" width={40} height={40} sx={{ mr: 2 }} />
+              <Box sx={{ flex: 1 }}>
+                <Skeleton variant="text" width="40%" height={24} sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)' }} />
+                <Skeleton variant="text" width="60%" height={20} sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)' }} />
+              </Box>
+              <Skeleton variant="circular" width={24} height={24} sx={{ ml: 1 }} />
+            </Box>
+          </ListItem>
+        ))}
+      </List>
+    </Box>
+  );
   if (!conversationsData || !conversationsData.conversations) return <div>No conversations found</div>;
 
   return (

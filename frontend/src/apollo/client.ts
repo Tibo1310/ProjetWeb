@@ -36,6 +36,11 @@ export const client = new ApolloClient({
               return incoming;
             },
           },
+          users: {
+            merge(existing = [], incoming) {
+              return incoming;
+            },
+          },
         },
       },
     },
@@ -43,6 +48,7 @@ export const client = new ApolloClient({
   defaultOptions: {
     watchQuery: {
       fetchPolicy: 'cache-and-network',
+      nextFetchPolicy: 'cache-first',
     },
   },
 }); 

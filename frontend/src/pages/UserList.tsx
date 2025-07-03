@@ -10,6 +10,7 @@ import {
   Typography,
   Chip,
   Avatar,
+  Skeleton,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PersonIcon from '@mui/icons-material/Person';
@@ -74,7 +75,33 @@ export default function UserList() {
   };
 
   if (error) return <div>Error: {error.message}</div>;
-  if (loading) return <div>Loading...</div>;
+  if (loading) return (
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, color: '#fff', mb: 3, borderBottom: '2px solid rgba(255, 255, 255, 0.1)', paddingBottom: 2 }}>
+        Users
+      </Typography>
+      <List sx={{ gap: 2, display: 'flex', flexDirection: 'column' }}>
+        {[1, 2, 3].map((index) => (
+          <ListItem
+            key={index}
+            sx={{
+              bgcolor: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: 2,
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              pl: 3,
+            }}
+          >
+            <Skeleton variant="circular" width={40} height={40} sx={{ mr: 2 }} />
+            <Box sx={{ flex: 1 }}>
+              <Skeleton variant="text" width="60%" height={24} sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)' }} />
+              <Skeleton variant="text" width="40%" height={20} sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)' }} />
+            </Box>
+            <Skeleton variant="rectangular" width={100} height={24} sx={{ borderRadius: '12px', mr: 1 }} />
+          </ListItem>
+        ))}
+      </List>
+    </Box>
+  );
   if (!data || !data.users) return <div>No users found</div>;
 
   return (
