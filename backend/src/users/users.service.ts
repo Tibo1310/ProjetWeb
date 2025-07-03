@@ -82,4 +82,10 @@ export class UsersService {
     user.conversationIds.push(conversationId);
     return this.usersRepository.save(user);
   }
+
+  async delete(id: string): Promise<boolean> {
+    const user = await this.findOne(id);
+    await this.usersRepository.remove(user);
+    return true;
+  }
 }

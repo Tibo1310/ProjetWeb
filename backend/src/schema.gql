@@ -58,6 +58,7 @@ type Mutation {
   createUser(createUserInput: CreateUserInput!): User!
   login(loginInput: LoginInput!): AuthResponse!
   setUserOnlineStatus(id: String!, isOnline: Boolean!): User!
+  deleteUser(id: String!): Boolean!
   createConversation(createConversationInput: CreateConversationInput!): Conversation!
   updateConversation(updateConversationInput: UpdateConversationInput!): Conversation!
   deleteConversation(id: String!): Boolean!

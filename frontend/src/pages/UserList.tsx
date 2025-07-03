@@ -1,17 +1,20 @@
 import React from 'react';
-import { useQuery, gql } from '@apollo/client';
+import { useQuery, useMutation, gql } from '@apollo/client';
 import {
   Container,
   List,
   ListItem,
   ListItemAvatar,
   ListItemText,
+  ListItemSecondaryAction,
+  IconButton,
   Avatar,
   Typography,
   CircularProgress,
   Chip,
+  Box,
 } from '@mui/material';
-import { Person as PersonIcon } from '@mui/icons-material';
+import { Person as PersonIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
 const GET_USERS = gql`
   query GetUsers {
@@ -24,6 +27,12 @@ const GET_USERS = gql`
   }
 `;
 
+const DELETE_USER = gql`
+  mutation DeleteUser($id: String!) {
+    deleteUser(id: $id)
+  }
+`;
+
 interface User {
   id: string;
   username: string;
@@ -33,6 +42,23 @@ interface User {
 
 export default function UserList() {
   const { loading, error, data } = useQuery(GET_USERS);
+  const currentUserId = JSON.parse(localStorage.getItem('user') || '{}')?.id;
+
+  const [deleteUser] = useMutation(DELETE_USER, {
+    refetchQueries: [{ query: GET_USERS }],
+  });
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this user?')) {
+      try {
+        await deleteUser({
+          variables: { id },
+        });
+      } catch (error) {
+        console.error('Error deleting user:', error);
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -53,8 +79,8 @@ export default function UserList() {
   }
 
   return (
-    <Container>
-      <Typography variant="h4" sx={{ mb: 3 }}>
+    <Box sx={{ p: 2 }}>
+      <Typography variant="h5" gutterBottom>
         Users
       </Typography>
       <List>
@@ -65,9 +91,6 @@ export default function UserList() {
               mb: 1,
               bgcolor: 'background.paper',
               borderRadius: 1,
-              '&:hover': {
-                bgcolor: 'action.hover',
-              },
             }}
           >
             <ListItemAvatar>
@@ -79,14 +102,27 @@ export default function UserList() {
               primary={user.username}
               secondary={user.email}
             />
-            <Chip
-              label={user.isOnline ? 'Online' : 'Offline'}
-              color={user.isOnline ? 'success' : 'default'}
-              size="small"
-            />
+            <ListItemSecondaryAction sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {user.id !== currentUserId && (
+                <IconButton
+                  edge="end"
+                  aria-label="delete"
+                  onClick={() => handleDelete(user.id)}
+                  color="error"
+                  size="small"
+                >
+                  <DeleteIcon />
+                </IconButton>
+              )}
+              <Chip
+                label={user.isOnline ? 'Online' : 'Offline'}
+                color={user.isOnline ? 'success' : 'default'}
+                size="small"
+              />
+            </ListItemSecondaryAction>
           </ListItem>
         ))}
       </List>
-    </Container>
+    </Box>
   );
 } 

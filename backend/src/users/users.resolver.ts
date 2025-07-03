@@ -47,4 +47,15 @@ export class UsersResolver {
   ): Promise<User> {
     return this.usersService.setOnlineStatus(id, isOnline);
   }
+
+  @Mutation(() => Boolean)
+  async deleteUser(@Args('id') id: string): Promise<boolean> {
+    this.logger.log(`Deleting user with id: ${id}`);
+    try {
+      return await this.usersService.delete(id);
+    } catch (error) {
+      this.logger.error(`Failed to delete user with id: ${id}`, error.stack);
+      throw error;
+    }
+  }
 } 
