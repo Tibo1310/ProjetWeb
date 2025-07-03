@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, gql } from '@apollo/client';
+import { useQuery, useMutation, gql } from '@apollo/client';
 import {
   Container,
   List,
@@ -16,8 +16,33 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  Autocomplete,
+  Chip,
+  Box,
 } from '@mui/material';
-import { Group as GroupIcon } from '@mui/icons-material';
+import { Group as GroupIcon, Search as SearchIcon } from '@mui/icons-material';
+
+const GET_USERS = gql`
+  query GetUsers {
+    users {
+      id
+      username
+    }
+  }
+`;
+
+const CREATE_CONVERSATION = gql`
+  mutation CreateConversation($input: CreateConversationInput!) {
+    createConversation(createConversationInput: $input) {
+      id
+      name
+      participants {
+        id
+        username
+      }
+    }
+  }
+`;
 
 const GET_CONVERSATIONS = gql`
   query GetConversations {
@@ -57,19 +82,46 @@ interface Conversation {
   messages: Message[];
 }
 
+interface User {
+  id: string;
+  username: string;
+}
+
 export default function ConversationList() {
   const navigate = useNavigate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newConversationName, setNewConversationName] = useState('');
-  const { loading, error, data } = useQuery(GET_CONVERSATIONS);
+  const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
+  
+  const { loading: loadingConversations, error: errorConversations, data: conversationsData } = useQuery(GET_CONVERSATIONS);
+  const { loading: loadingUsers, data: usersData } = useQuery(GET_USERS);
+  
+  const [createConversation] = useMutation(CREATE_CONVERSATION, {
+    refetchQueries: [{ query: GET_CONVERSATIONS }],
+  });
 
-  const handleCreateConversation = () => {
-    // TODO: Implement conversation creation mutation
-    setIsDialogOpen(false);
-    setNewConversationName('');
+  const handleCreateConversation = async () => {
+    if (!newConversationName || selectedUsers.length === 0) return;
+    
+    try {
+      await createConversation({
+        variables: {
+          input: {
+            name: newConversationName,
+            participantIds: selectedUsers.map(user => user.id),
+          },
+        },
+      });
+      
+      setIsDialogOpen(false);
+      setNewConversationName('');
+      setSelectedUsers([]);
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+    }
   };
 
-  if (loading) {
+  if (loadingConversations) {
     return (
       <Container sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
         <CircularProgress />
@@ -77,11 +129,11 @@ export default function ConversationList() {
     );
   }
 
-  if (error) {
+  if (errorConversations) {
     return (
       <Container>
         <Typography color="error" sx={{ mt: 4 }}>
-          Error: {error.message}
+          Error: {errorConversations.message}
         </Typography>
       </Container>
     );
@@ -93,14 +145,14 @@ export default function ConversationList() {
         height: '100%',
         position: 'relative',
         padding: '24px',
-        paddingBottom: '80px', // Pour laisser de l'espace pour le bouton fixe
+        paddingBottom: '80px',
       }}
     >
       <Typography variant="h4" sx={{ mb: 3 }}>
         Conversations
       </Typography>
       <List>
-        {data.conversations.map((conversation: Conversation) => (
+        {conversationsData.conversations.map((conversation: Conversation) => (
           <ListItem
             key={conversation.id}
             button
@@ -120,11 +172,11 @@ export default function ConversationList() {
               </Avatar>
             </ListItemAvatar>
             <ListItemText
-              primary={conversation.name || conversation.participants.map(p => p.username).join(', ')}
+              primary={conversation.name}
               secondary={
-                conversation.messages.length > 0
-                  ? `Latest: ${conversation.messages[conversation.messages.length - 1].content}`
-                  : 'No messages yet'
+                <Typography variant="body2" color="text.secondary">
+                  {conversation.participants.map(p => p.username).join(', ')}
+                </Typography>
               }
             />
           </ListItem>
@@ -139,7 +191,7 @@ export default function ConversationList() {
         sx={{
           position: 'fixed',
           bottom: 0,
-          left: { xs: 0, sm: '240px' }, // Responsive pour la sidebar
+          left: { xs: 0, sm: '240px' },
           right: 0,
           height: 64,
           borderRadius: 0,
@@ -151,7 +203,12 @@ export default function ConversationList() {
         Create Conversation
       </Button>
 
-      <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
+      <Dialog 
+        open={isDialogOpen} 
+        onClose={() => setIsDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Create New Conversation</DialogTitle>
         <DialogContent>
           <TextField
@@ -161,11 +218,55 @@ export default function ConversationList() {
             fullWidth
             value={newConversationName}
             onChange={(e) => setNewConversationName(e.target.value)}
+            sx={{ mb: 2 }}
+          />
+          <Autocomplete
+            multiple
+            options={usersData?.users || []}
+            getOptionLabel={(option: User) => option.username}
+            value={selectedUsers}
+            onChange={(_, newValue) => setSelectedUsers(newValue)}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Search Users"
+                placeholder="Type to search users"
+                fullWidth
+                InputProps={{
+                  ...params.InputProps,
+                  startAdornment: (
+                    <>
+                      <SearchIcon color="action" sx={{ mr: 1 }} />
+                      {params.InputProps.startAdornment}
+                    </>
+                  ),
+                }}
+              />
+            )}
+            renderTags={(value: User[], getTagProps) =>
+              value.map((option: User, index: number) => (
+                <Chip
+                  label={option.username}
+                  {...getTagProps({ index })}
+                  key={option.id}
+                />
+              ))
+            }
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleCreateConversation} variant="contained">
+          <Button onClick={() => {
+            setIsDialogOpen(false);
+            setNewConversationName('');
+            setSelectedUsers([]);
+          }}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleCreateConversation} 
+            variant="contained"
+            disabled={!newConversationName || selectedUsers.length === 0}
+          >
             Create
           </Button>
         </DialogActions>
