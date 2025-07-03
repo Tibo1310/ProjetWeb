@@ -74,6 +74,8 @@ export default function UserList() {
   };
 
   if (error) return <div>Error: {error.message}</div>;
+  if (loading) return <div>Loading...</div>;
+  if (!data || !data.users) return <div>No users found</div>;
 
   return (
     <Box sx={{ p: 3 }}>

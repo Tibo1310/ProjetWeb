@@ -210,6 +210,8 @@ export default function ConversationList() {
   };
 
   if (errorConversations) return <div>Error: {errorConversations.message}</div>;
+  if (loadingConversations) return <div>Loading...</div>;
+  if (!conversationsData || !conversationsData.conversations) return <div>No conversations found</div>;
 
   return (
     <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
