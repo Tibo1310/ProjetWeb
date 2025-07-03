@@ -244,7 +244,7 @@ export default function ConversationList() {
             }}
           >
             <Box
-              onClick={() => navigate(`/conversation/${conversation.id}`)}
+              onClick={() => navigate(`/conversations/${conversation.id}`)}
               sx={{ flexGrow: 1 }}
             >
               <ListItemText
