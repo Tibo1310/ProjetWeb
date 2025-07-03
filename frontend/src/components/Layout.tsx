@@ -10,6 +10,7 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
+  Avatar,
 } from '@mui/material';
 import {
   People as PeopleIcon,
@@ -28,9 +29,23 @@ const SET_USER_ONLINE_STATUS = gql`
   }
 `;
 
+function stringToColor(string: string) {
+  let hash = 0;
+  for (let i = 0; i < string.length; i++) {
+    hash = string.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  let color = '#';
+  for (let i = 0; i < 3; i++) {
+    const value = (hash >> (i * 8)) & 0xFF;
+    color += ('00' + value.toString(16)).substr(-2);
+  }
+  return color;
+}
+
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   const [setUserOnlineStatus] = useMutation(SET_USER_ONLINE_STATUS);
 
@@ -39,12 +54,11 @@ export default function Layout() {
   };
 
   const handleLogout = async () => {
-    const userId = JSON.parse(localStorage.getItem('user') || '{}')?.id;
-    if (userId) {
+    if (user.id) {
       try {
         await setUserOnlineStatus({
           variables: {
-            id: userId,
+            id: user.id,
             isOnline: false
           }
         });
@@ -83,7 +97,43 @@ export default function Layout() {
           <ListItemText primary="Conversations" />
         </ListItem>
       </List>
-      <Box sx={{ borderTop: 1, borderColor: 'divider' }}>
+      <Box sx={{ borderTop: 1, borderColor: 'divider', mt: 'auto' }}>
+        {user.username && (
+          <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Avatar
+              sx={{
+                bgcolor: stringToColor(user.username),
+                width: 40,
+                height: 40,
+              }}
+            >
+              {user.username.charAt(0).toUpperCase()}
+            </Avatar>
+            <Box sx={{ overflow: 'hidden' }}>
+              <Typography
+                sx={{
+                  fontWeight: 500,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {user.username}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: 'text.secondary',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {user.email}
+              </Typography>
+            </Box>
+          </Box>
+        )}
         <ListItem button onClick={handleLogout}>
           <ListItemIcon>
             <LogoutIcon />
