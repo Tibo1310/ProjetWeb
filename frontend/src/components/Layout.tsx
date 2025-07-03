@@ -2,20 +2,16 @@ import React, { useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useMutation, gql } from '@apollo/client';
 import {
-  AppBar,
   Box,
   CssBaseline,
   Drawer,
-  IconButton,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
-  Toolbar,
   Typography,
 } from '@mui/material';
 import {
-  Menu as MenuIcon,
   People as PeopleIcon,
   Chat as ChatIcon,
   ExitToApp as LogoutIcon,
@@ -62,9 +58,18 @@ export default function Layout() {
   };
 
   const drawer = (
-    <div>
-      <Toolbar />
-      <List>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+        <Typography variant="h6" sx={{ 
+          fontWeight: 'bold',
+          color: '#1976d2',
+          textAlign: 'center',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
+        }}>
+          Facebook Messenger
+        </Typography>
+      </Box>
+      <List sx={{ flex: 1 }}>
         <ListItem button onClick={() => navigate('/users')}>
           <ListItemIcon>
             <PeopleIcon />
@@ -84,34 +89,12 @@ export default function Layout() {
           <ListItemText primary="Logout" />
         </ListItem>
       </List>
-    </div>
+    </Box>
   );
 
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
-      <AppBar
-        position="fixed"
-        sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
-        }}
-      >
-        <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap component="div">
-            Messenger Clone
-          </Typography>
-        </Toolbar>
-      </AppBar>
       <Box
         component="nav"
         sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
@@ -158,7 +141,6 @@ export default function Layout() {
           p: 0,
         }}
       >
-        <Toolbar />
         <Box sx={{ flex: 1, overflow: 'hidden' }}>
           <Outlet />
         </Box>
