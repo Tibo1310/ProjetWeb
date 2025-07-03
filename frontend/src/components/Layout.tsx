@@ -82,13 +82,15 @@ export default function Layout() {
           </ListItemIcon>
           <ListItemText primary="Conversations" />
         </ListItem>
+      </List>
+      <Box sx={{ borderTop: 1, borderColor: 'divider' }}>
         <ListItem button onClick={handleLogout}>
           <ListItemIcon>
             <LogoutIcon />
           </ListItemIcon>
           <ListItemText primary="Logout" />
         </ListItem>
-      </List>
+      </Box>
     </Box>
   );
 
