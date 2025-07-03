@@ -10,15 +10,14 @@ import {
   Avatar,
   Typography,
   CircularProgress,
-  Fab,
+  Button,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   TextField,
 } from '@mui/material';
-import { Add as AddIcon, Group as GroupIcon } from '@mui/icons-material';
+import { Group as GroupIcon } from '@mui/icons-material';
 
 const GET_CONVERSATIONS = gql`
   query GetConversations {
@@ -89,7 +88,14 @@ export default function ConversationList() {
   }
 
   return (
-    <Container>
+    <Container
+      sx={{
+        height: '100%',
+        position: 'relative',
+        padding: '24px',
+        paddingBottom: '80px', // Pour laisser de l'espace pour le bouton fixe
+      }}
+    >
       <Typography variant="h4" sx={{ mb: 3 }}>
         Conversations
       </Typography>
@@ -125,13 +131,25 @@ export default function ConversationList() {
         ))}
       </List>
 
-      <Fab
+      <Button
+        variant="contained"
         color="primary"
-        sx={{ position: 'fixed', bottom: 16, right: 16 }}
+        size="large"
         onClick={() => setIsDialogOpen(true)}
+        sx={{
+          position: 'fixed',
+          bottom: 0,
+          left: { xs: 0, sm: '240px' }, // Responsive pour la sidebar
+          right: 0,
+          height: 64,
+          borderRadius: 0,
+          fontSize: '1.1rem',
+          textTransform: 'none',
+          zIndex: 1000
+        }}
       >
-        <AddIcon />
-      </Fab>
+        Create Conversation
+      </Button>
 
       <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
         <DialogTitle>Create New Conversation</DialogTitle>
