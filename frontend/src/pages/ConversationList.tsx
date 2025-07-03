@@ -139,7 +139,7 @@ export default function ConversationList() {
   const handleEditOpen = (conversation: Conversation) => {
     setSelectedConversation(conversation);
     setName(conversation.name);
-    setSelectedUsers(conversation.participants);
+    setSelectedUsers(conversation.participants.map(({ id, username }) => ({ id, username })));
     setEditOpen(true);
   };
 
@@ -244,12 +244,16 @@ export default function ConversationList() {
             }}
           >
             <Box
-              onClick={() => navigate(`/conversations/${conversation.id}`)}
+              onClick={() => navigate(`/conversation/${conversation.id}`)}
               sx={{ flexGrow: 1 }}
             >
               <ListItemText
                 primary={conversation.name}
-                secondary={`${conversation.participants.length} participants`}
+                secondary={
+                  <Typography variant="body2" color="text.secondary">
+                    {`${conversation.participants.length} participants (${conversation.participants.map(p => p.username).join(', ')})`}
+                  </Typography>
+                }
               />
             </Box>
             <Box>
@@ -322,32 +326,15 @@ export default function ConversationList() {
             getOptionLabel={(option: User) => option.username}
             value={selectedUsers}
             onChange={(_, newValue) => setSelectedUsers(newValue)}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Search Users"
-                placeholder="Type to search users"
+                margin="dense"
+                label="Select Users"
                 fullWidth
-                InputProps={{
-                  ...params.InputProps,
-                  startAdornment: (
-                    <>
-                      <SearchIcon color="action" sx={{ mr: 1 }} />
-                      {params.InputProps.startAdornment}
-                    </>
-                  ),
-                }}
               />
             )}
-            renderTags={(value: User[], getTagProps) =>
-              value.map((option: User, index: number) => (
-                <Chip
-                  label={option.username}
-                  {...getTagProps({ index })}
-                  key={option.id}
-                />
-              ))
-            }
           />
         </DialogContent>
         <DialogActions>
