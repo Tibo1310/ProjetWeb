@@ -24,16 +24,40 @@ const LOGIN_MUTATION = gql`
   }
 `;
 
+const SET_USER_ONLINE_STATUS = gql`
+  mutation SetUserOnlineStatus($id: String!, $isOnline: Boolean!) {
+    setUserOnlineStatus(id: $id, isOnline: $isOnline) {
+      id
+      isOnline
+    }
+  }
+`;
+
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
+  const [setUserOnlineStatus] = useMutation(SET_USER_ONLINE_STATUS);
+
   const [login, { loading }] = useMutation(LOGIN_MUTATION, {
-    onCompleted: (data) => {
+    onCompleted: async (data) => {
       localStorage.setItem('token', data.login.token);
       localStorage.setItem('user', JSON.stringify(data.login.user));
+      
+      // Set user online status
+      try {
+        await setUserOnlineStatus({
+          variables: {
+            id: data.login.user.id,
+            isOnline: true
+          }
+        });
+      } catch (err) {
+        console.error('Error setting online status:', err);
+      }
+
       navigate('/conversations');
     },
     onError: (error) => {

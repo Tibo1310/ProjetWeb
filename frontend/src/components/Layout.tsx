@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
+import { useMutation, gql } from '@apollo/client';
 import {
   AppBar,
   Box,
@@ -22,16 +23,41 @@ import {
 
 const drawerWidth = 240;
 
+const SET_USER_ONLINE_STATUS = gql`
+  mutation SetUserOnlineStatus($id: String!, $isOnline: Boolean!) {
+    setUserOnlineStatus(id: $id, isOnline: $isOnline) {
+      id
+      isOnline
+    }
+  }
+`;
+
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
+
+  const [setUserOnlineStatus] = useMutation(SET_USER_ONLINE_STATUS);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const userId = JSON.parse(localStorage.getItem('user') || '{}')?.id;
+    if (userId) {
+      try {
+        await setUserOnlineStatus({
+          variables: {
+            id: userId,
+            isOnline: false
+          }
+        });
+      } catch (err) {
+        console.error('Error setting offline status:', err);
+      }
+    }
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     navigate('/login');
   };
 

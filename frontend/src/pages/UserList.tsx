@@ -41,7 +41,9 @@ interface User {
 }
 
 export default function UserList() {
-  const { loading, error, data } = useQuery(GET_USERS);
+  const { loading, error, data } = useQuery(GET_USERS, {
+    pollInterval: 5000,
+  });
   const currentUserId = JSON.parse(localStorage.getItem('user') || '{}')?.id;
 
   const [deleteUser] = useMutation(DELETE_USER, {
@@ -118,6 +120,13 @@ export default function UserList() {
                 label={user.isOnline ? 'Online' : 'Offline'}
                 color={user.isOnline ? 'success' : 'default'}
                 size="small"
+                sx={{
+                  color: user.isOnline ? '#2e7d32' : 'text.secondary',
+                  bgcolor: user.isOnline ? '#e8f5e9' : '#f5f5f5',
+                  '& .MuiChip-label': {
+                    fontWeight: user.isOnline ? 600 : 400,
+                  },
+                }}
               />
             </ListItemSecondaryAction>
           </ListItem>
