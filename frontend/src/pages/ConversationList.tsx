@@ -2,14 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, gql } from '@apollo/client';
 import {
-  Container,
   List,
   ListItem,
-  ListItemAvatar,
   ListItemText,
-  Avatar,
+  IconButton,
   Typography,
-  CircularProgress,
   Button,
   Dialog,
   DialogTitle,
@@ -17,11 +14,11 @@ import {
   DialogActions,
   TextField,
   Autocomplete,
-  Chip,
   Box,
-  IconButton,
+  Avatar,
+  AvatarGroup,
 } from '@mui/material';
-import { Group as GroupIcon, Search as SearchIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
 
 const GET_USERS = gql`
   query GetUsers {
@@ -105,6 +102,19 @@ interface Conversation {
 interface User {
   id: string;
   username: string;
+}
+
+function stringToColor(string: string) {
+  let hash = 0;
+  for (let i = 0; i < string.length; i++) {
+    hash = string.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  let color = '#';
+  for (let i = 0; i < 3; i++) {
+    const value = (hash >> (i * 8)) & 0xFF;
+    color += ('00' + value.toString(16)).substr(-2);
+  }
+  return color;
 }
 
 export default function ConversationList() {
@@ -199,118 +209,180 @@ export default function ConversationList() {
     }
   };
 
-  if (loadingConversations) {
-    return (
-      <Container sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-        <CircularProgress />
-      </Container>
-    );
-  }
-
-  if (errorConversations) {
-    return (
-      <Container>
-        <Typography color="error" sx={{ mt: 4 }}>
-          Error: {errorConversations.message}
-        </Typography>
-      </Container>
-    );
-  }
+  if (loadingConversations) return <div>Loading...</div>;
+  if (errorConversations) return <div>Error: {errorConversations.message}</div>;
 
   return (
-    <Container
-      sx={{
-        height: '100%',
-        position: 'relative',
-        padding: '24px',
-        paddingBottom: '80px',
-      }}
-    >
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        Conversations
-      </Typography>
-      <List>
-        {conversationsData.conversations.map((conversation: Conversation) => (
-          <ListItem
-            key={conversation.id}
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              cursor: 'pointer',
-              '&:hover': {
-                backgroundColor: 'rgba(0, 0, 0, 0.04)',
-              },
-            }}
-          >
-            <Box
-              onClick={() => navigate(`/conversations/${conversation.id}`)}
-              sx={{ flexGrow: 1 }}
-            >
-              <ListItemText
-                primary={conversation.name}
-                secondary={
-                  <Typography variant="body2" color="text.secondary">
-                    {`${conversation.participants.length} participants (${conversation.participants.map(p => p.username).join(', ')})`}
-                  </Typography>
-                }
-              />
-            </Box>
-            <Box>
-              <IconButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleEditOpen(conversation);
-                }}
-                size="small"
-              >
-                <EditIcon />
-              </IconButton>
-              <IconButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(conversation.id);
-                }}
-                size="small"
-                color="error"
-              >
-                <DeleteIcon />
-              </IconButton>
-            </Box>
-          </ListItem>
-        ))}
-      </List>
-
-      <Button
-        variant="contained"
-        color="primary"
-        size="large"
-        onClick={handleCreateOpen}
-        sx={{
-          position: 'fixed',
-          bottom: 0,
-          left: { xs: 0, sm: '240px' },
-          right: 0,
-          height: 64,
-          borderRadius: 0,
-          fontSize: '1.1rem',
-          textTransform: 'none',
-          zIndex: 1000
+    <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Typography 
+        variant="h5" 
+        sx={{ 
+          fontWeight: 600,
+          color: '#fff',
+          mb: 3,
+          borderBottom: '2px solid rgba(255, 255, 255, 0.1)',
+          paddingBottom: 2,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
         }}
       >
-        Create Conversation
-      </Button>
+        Conversations
+        <Button
+          variant="contained"
+          onClick={handleCreateOpen}
+          startIcon={<AddIcon />}
+          sx={{
+            bgcolor: 'rgba(25, 118, 210, 0.15)',
+            borderColor: 'rgba(25, 118, 210, 0.3)',
+            color: '#64b5f6',
+            '&:hover': {
+              bgcolor: 'rgba(25, 118, 210, 0.25)',
+            },
+          }}
+        >
+          New Chat
+        </Button>
+      </Typography>
+
+      <List sx={{ gap: 2, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'auto' }}>
+        {conversationsData.conversations.map((conversation: Conversation) => {
+          const lastMessage = conversation.messages[conversation.messages.length - 1];
+          
+          return (
+            <ListItem
+              key={conversation.id}
+              sx={{
+                bgcolor: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: 2,
+                transition: 'all 0.3s ease',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                  borderColor: 'rgba(255, 255, 255, 0.2)',
+                  cursor: 'pointer',
+                },
+                position: 'relative',
+                overflow: 'hidden',
+                pl: 3,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1,
+              }}
+              onClick={() => navigate(`/conversations/${conversation.id}`)}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 2 }}>
+                <AvatarGroup 
+                  max={3}
+                  sx={{
+                    '& .MuiAvatar-root': {
+                      width: 32,
+                      height: 32,
+                      fontSize: '0.875rem',
+                      border: '2px solid rgba(255, 255, 255, 0.2)',
+                    },
+                  }}
+                >
+                  {conversation.participants.map((participant) => (
+                    <Avatar
+                      key={participant.id}
+                      sx={{ bgcolor: stringToColor(participant.username) }}
+                    >
+                      {participant.username.charAt(0).toUpperCase()}
+                    </Avatar>
+                  ))}
+                </AvatarGroup>
+
+                <Box sx={{ flex: 1 }}>
+                  <Typography
+                    sx={{
+                      color: '#fff',
+                      fontWeight: 500,
+                      fontSize: '1rem',
+                    }}
+                  >
+                    {conversation.name}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      fontSize: '0.875rem',
+                    }}
+                  >
+                    {lastMessage 
+                      ? `${lastMessage.content.substring(0, 50)}${lastMessage.content.length > 50 ? '...' : ''}`
+                      : 'No messages yet'}
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditOpen(conversation);
+                    }}
+                    size="small"
+                    sx={{
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      '&:hover': {
+                        color: '#fff',
+                        bgcolor: 'rgba(255, 255, 255, 0.1)',
+                      },
+                    }}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(conversation.id);
+                    }}
+                    size="small"
+                    sx={{
+                      color: '#ff4d4d',
+                      opacity: 0.7,
+                      '&:hover': {
+                        opacity: 1,
+                        bgcolor: 'rgba(255, 77, 77, 0.15)',
+                      },
+                    }}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              </Box>
+
+              <Typography
+                variant="caption"
+                sx={{
+                  color: 'rgba(255, 255, 255, 0.5)',
+                  fontSize: '0.75rem',
+                }}
+              >
+                {conversation.participants.length} participants
+              </Typography>
+            </ListItem>
+          );
+        })}
+      </List>
 
       <Dialog 
         open={open || editOpen} 
         onClose={handleClose}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: '#1e1e1e',
+            color: '#fff',
+          }
+        }}
       >
-        <DialogTitle>
+        <DialogTitle sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
           {editOpen ? 'Edit Conversation' : 'Create New Conversation'}
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ mt: 2 }}>
           <TextField
             autoFocus
             margin="dense"
@@ -318,7 +390,21 @@ export default function ConversationList() {
             fullWidth
             value={name}
             onChange={(e) => setName(e.target.value)}
-            sx={{ mb: 2 }}
+            sx={{
+              mb: 2,
+              '& .MuiOutlinedInput-root': {
+                color: '#fff',
+                '& fieldset': {
+                  borderColor: 'rgba(255, 255, 255, 0.23)',
+                },
+                '&:hover fieldset': {
+                  borderColor: 'rgba(255, 255, 255, 0.4)',
+                },
+              },
+              '& .MuiInputLabel-root': {
+                color: 'rgba(255, 255, 255, 0.7)',
+              },
+            }}
           />
           <Autocomplete
             multiple
@@ -330,24 +416,65 @@ export default function ConversationList() {
             renderInput={(params) => (
               <TextField
                 {...params}
-                margin="dense"
                 label="Select Users"
-                fullWidth
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    color: '#fff',
+                    '& fieldset': {
+                      borderColor: 'rgba(255, 255, 255, 0.23)',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: 'rgba(255, 255, 255, 0.4)',
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: 'rgba(255, 255, 255, 0.7)',
+                  },
+                }}
               />
             )}
+            sx={{
+              '& .MuiChip-root': {
+                bgcolor: 'rgba(25, 118, 210, 0.15)',
+                color: '#64b5f6',
+                borderColor: 'rgba(25, 118, 210, 0.3)',
+              },
+            }}
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
+        <DialogActions sx={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', p: 2 }}>
           <Button 
-            onClick={editOpen ? handleEditSave : handleCreateSave} 
+            onClick={handleClose}
+            sx={{ 
+              color: 'rgba(255, 255, 255, 0.7)',
+              '&:hover': {
+                color: '#fff',
+                bgcolor: 'rgba(255, 255, 255, 0.1)',
+              },
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={editOpen ? handleEditSave : handleCreateSave}
             variant="contained"
             disabled={!name || selectedUsers.length === 0}
+            sx={{
+              bgcolor: 'rgba(25, 118, 210, 0.15)',
+              color: '#64b5f6',
+              '&:hover': {
+                bgcolor: 'rgba(25, 118, 210, 0.25)',
+              },
+              '&.Mui-disabled': {
+                bgcolor: 'rgba(255, 255, 255, 0.05)',
+                color: 'rgba(255, 255, 255, 0.3)',
+              },
+            }}
           >
             {editOpen ? 'Save Changes' : 'Create'}
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+    </Box>
   );
 } 
