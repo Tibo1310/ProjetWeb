@@ -13,6 +13,8 @@ import {
   ListItemText,
   CircularProgress,
   Divider,
+  Avatar,
+  AvatarGroup,
 } from '@mui/material';
 import { Send as SendIcon } from '@mui/icons-material';
 
@@ -76,6 +78,19 @@ interface Conversation {
   isGroup: boolean;
   participants: Participant[];
   messages: Message[];
+}
+
+function stringToColor(string: string) {
+  let hash = 0;
+  for (let i = 0; i < string.length; i++) {
+    hash = string.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  let color = '#';
+  for (let i = 0; i < 3; i++) {
+    const value = (hash >> (i * 8)) & 0xFF;
+    color += ('00' + value.toString(16)).substr(-2);
+  }
+  return color;
 }
 
 export default function ConversationDetail() {
@@ -166,12 +181,53 @@ export default function ConversationDetail() {
         }}
       >
         <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-          <Typography variant="h6">
-            {conversation.name || conversation.participants.map(p => p.username).join(', ')}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {conversation.participants.length} participants
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <AvatarGroup 
+              max={3}
+              sx={{
+                '& .MuiAvatar-root': {
+                  width: 40,
+                  height: 40,
+                  fontSize: '1rem',
+                  border: '2px solid rgba(255, 255, 255, 0.2)',
+                },
+              }}
+            >
+              {conversation.participants.map((participant: Participant) => (
+                <Avatar
+                  key={participant.id}
+                  sx={{ bgcolor: stringToColor(participant.username) }}
+                >
+                  {participant.username.charAt(0).toUpperCase()}
+                </Avatar>
+              ))}
+            </AvatarGroup>
+            <Box>
+              <Typography variant="h6" sx={{ color: '#fff', fontWeight: 600 }}>
+                {conversation.name || conversation.participants.map(p => p.username).join(', ')}
+              </Typography>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                }}
+              >
+                {conversation.participants.length} participants
+                <Typography 
+                  component="span" 
+                  sx={{ 
+                    color: 'rgba(255, 255, 255, 0.5)',
+                    fontSize: 'inherit',
+                  }}
+                >
+                  ({conversation.participants.map((p: Participant) => p.username).join(', ')})
+                </Typography>
+              </Typography>
+            </Box>
+          </Box>
         </Box>
 
         <List
