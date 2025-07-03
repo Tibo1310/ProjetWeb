@@ -209,7 +209,6 @@ export default function ConversationList() {
     }
   };
 
-  if (loadingConversations) return <div>Loading...</div>;
   if (errorConversations) return <div>Error: {errorConversations.message}</div>;
 
   return (
