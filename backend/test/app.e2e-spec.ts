@@ -4,11 +4,13 @@ import request from 'supertest';
 import { TestAppModule } from './test-app.module';
 import { DataSource } from 'typeorm';
 import { CacheService } from '../src/cache/cache.service';
+import { RabbitMQService } from '../src/rabbitmq/rabbitmq.service';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
   let dataSource: DataSource;
   let cacheService: CacheService;
+  let rabbitMQService: RabbitMQService;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -20,9 +22,10 @@ describe('AppController (e2e)', () => {
     app = moduleFixture.createNestApplication();
     await app.init();
 
-    // Get services for cleanup
+    // Get services for cleanup and testing
     dataSource = app.get(DataSource);
     cacheService = app.get(CacheService);
+    rabbitMQService = app.get(RabbitMQService);
 
     // Clean database and cache before each test
     await dataSource.query('TRUNCATE TABLE "user" RESTART IDENTITY CASCADE;');
@@ -217,6 +220,46 @@ describe('AppController (e2e)', () => {
           expect(res.body.data.sendMessage.content).toBe('Hello, World!');
           expect(res.body.data.sendMessage.senderId).toBe(userId);
         });
+    });
+
+    it('should call RabbitMQ service when sending a message (Integration Test)', async () => {
+      // Spy sur la méthode sendMessage de RabbitMQ
+      const rabbitMQSpy = jest.spyOn(rabbitMQService, 'sendMessage').mockResolvedValue(undefined);
+
+      // Envoyer un message via GraphQL
+      const response = await request(app.getHttpServer())
+        .post('/graphql')
+        .send({
+          query: sendMessageMutation,
+          variables: {
+            input: {
+              content: 'Integration test message',
+              conversationId,
+              senderId: userId,
+            },
+          },
+        })
+        .expect(200);
+
+      // Vérifier que le message a été créé
+      expect(response.body.data.sendMessage).toBeDefined();
+      expect(response.body.data.sendMessage.content).toBe('Integration test message');
+
+      // 🎯 TEST D'INTÉGRATION : Vérifier que RabbitMQ a été appelé
+      expect(rabbitMQSpy).toHaveBeenCalledTimes(1);
+      expect(rabbitMQSpy).toHaveBeenCalledWith(
+        'chat.message.created',
+        expect.objectContaining({
+          content: 'Integration test message',
+          senderId: userId,
+          conversationId: conversationId,
+          id: expect.any(String),
+          createdAt: expect.any(Date),
+        })
+      );
+
+      // Nettoyer le spy
+      rabbitMQSpy.mockRestore();
     });
   });
 });
