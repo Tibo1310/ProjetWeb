@@ -7,6 +7,7 @@ import { CacheService } from './cache.service';
 @Global()
 @Module({
   imports: [
+    // Configuration simple pour éviter les problèmes avec Redis en test
     NestCacheModule.register({
       ttl: 60 * 60 * 1000, // 1 hour
       max: 100, // maximum number of items in cache

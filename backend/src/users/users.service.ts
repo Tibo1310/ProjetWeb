@@ -5,6 +5,7 @@ import { CreateUserInput, LoginInput } from './dto/create-user.input';
 import { User } from './models/user.entity';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class UsersService {
@@ -12,7 +13,8 @@ export class UsersService {
   
   constructor(
     @InjectRepository(User)
-    private usersRepository: Repository<User>
+    private usersRepository: Repository<User>,
+    private cacheService: CacheService
   ) {}
 
   async findAll(): Promise<User[]> {
@@ -20,10 +22,23 @@ export class UsersService {
   }
 
   async findOne(id: string): Promise<User> {
+    // Vérifier le cache en premier
+    const cachedUser = await this.cacheService.getCachedUser(id);
+    if (cachedUser) {
+      this.logger.debug(`User ${id} found in cache`);
+      return cachedUser;
+    }
+
+    // Sinon, chercher en base de données
     const user = await this.usersRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
+
+    // Mettre en cache pour les prochaines requêtes
+    await this.cacheService.cacheUser(id, user);
+    this.logger.debug(`User ${id} cached from database`);
+    
     return user;
   }
 
@@ -71,7 +86,13 @@ export class UsersService {
   async setOnlineStatus(id: string, isOnline: boolean): Promise<User> {
     const user = await this.findOne(id);
     user.isOnline = isOnline;
-    return this.usersRepository.save(user);
+    const updatedUser = await this.usersRepository.save(user);
+    
+    // Invalider le cache car l'utilisateur a été modifié
+    await this.cacheService.del(this.cacheService.getUserKey(id));
+    this.logger.debug(`Cache invalidated for user ${id} after status update`);
+    
+    return updatedUser;
   }
 
   async addConversation(userId: string, conversationId: string): Promise<User> {

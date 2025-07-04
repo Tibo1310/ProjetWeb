@@ -63,6 +63,7 @@ jobs:
       - name: Run E2E Tests
         working-directory: ./backend
         env:
+          NODE_ENV: test
           DATABASE_URL: postgresql://user:password@localhost:5432/chat_db
           REDIS_HOST: localhost
           REDIS_PORT: 6379
@@ -73,6 +74,7 @@ jobs:
       - name: Start Backend for Performance Tests
         working-directory: ./backend
         env:
+          NODE_ENV: production
           DATABASE_URL: postgresql://user:password@localhost:5432/chat_db
           REDIS_HOST: localhost
           REDIS_PORT: 6379

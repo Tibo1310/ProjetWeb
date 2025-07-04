@@ -1,32 +1,54 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { AppModule } from '../src/app.module';
+import { TestAppModule } from './test-app.module';
 import { DataSource } from 'typeorm';
+import { CacheService } from '../src/cache/cache.service';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
+  let dataSource: DataSource;
+  let cacheService: CacheService;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
-        AppModule,
+        TestAppModule,
       ],
     }).compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();
 
-    // Clean database before each test
-    const dataSource = app.get(DataSource);
+    // Get services for cleanup
+    dataSource = app.get(DataSource);
+    cacheService = app.get(CacheService);
+
+    // Clean database and cache before each test
     await dataSource.query('TRUNCATE TABLE "user" RESTART IDENTITY CASCADE;');
+    await cacheService.reset();
   }, 30000); // 30 seconds timeout
 
   afterAll(async () => {
-    if (app) {
-      await app.close();
+    try {
+      // Clean cache
+      if (cacheService) {
+        await cacheService.reset();
+      }
+
+      // Close database connections
+      if (dataSource && dataSource.isInitialized) {
+        await dataSource.destroy();
+      }
+
+      // Close the application
+      if (app) {
+        await app.close();
+      }
+    } catch (error) {
+      console.warn('Error during cleanup:', error);
     }
-  });
+  }, 10000);
 
   const createUserMutation = `
     mutation CreateUser($input: CreateUserInput!) {
