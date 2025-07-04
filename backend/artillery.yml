@@ -1,36 +1,284 @@
 config:
   target: "http://localhost:3001/graphql"
   phases:
+    # Test de montée en charge progressive
+    - duration: 30
+      arrivalRate: 2
+      name: "Warmup - Low load"
     - duration: 60
       arrivalRate: 5
-      name: "Warm up"
-    - duration: 120
+      name: "Ramp up - Medium load"
+    - duration: 60
       arrivalRate: 10
-      name: "Peak load"
-  payload:
-    path: "test/users.csv"
-    fields:
-      - "userId"
-      - "conversationId"
+      name: "Peak load - High traffic"
+    - duration: 30
+      arrivalRate: 15
+      name: "Stress test - Maximum load"
+  
+  # Métriques personnalisées
+  plugins:
+    metrics-by-endpoint:
+      useOnlyRequestNames: true
+  
+  # Timeouts et seuils
+  http:
+    timeout: 10000
+  
+  # Objectifs de performance
+  ensure:
+    p95: 500  # 95% des requêtes sous 500ms
+    p99: 1000 # 99% des requêtes sous 1s
+    maxErrorRate: 1 # Max 1% d'erreurs
 
 scenarios:
-  - name: "Send and receive messages"
+  # Scénario 1: Test de création d'utilisateur
+  - weight: 20
+    name: "Create User Performance"
     flow:
       - post:
           url: "/graphql"
           json:
             query: |
-              mutation SendMessage($input: SendMessageInput!) {
-                sendMessage(sendMessageInput: $input) {
+              mutation CreateUser($input: CreateUserInput!) {
+                createUser(createUserInput: $input) {
                   id
-                  content
-                  senderId
-                  conversationId
+                  username
+                  email
                   createdAt
                 }
               }
             variables:
               input:
-                content: "Test message"
-                senderId: "{{ userId }}"
-                conversationId: "{{ conversationId }}" 
+                username: "user_{{ $randomString() }}"
+                email: "user_{{ $randomString() }}@test.com"
+                password: "password123"
+          capture:
+            - json: "$.data.createUser.id"
+              as: "newUserId"
+          think: 1
+
+  # Scénario 2: Test de création de conversation
+  - weight: 30
+    name: "Create Conversation Performance"
+    flow:
+      # Créer deux utilisateurs d'abord
+      - post:
+          url: "/graphql"
+          json:
+            query: |
+              mutation CreateUser($input: CreateUserInput!) {
+                createUser(createUserInput: $input) {
+                  id
+                  username
+                  email
+                }
+              }
+            variables:
+              input:
+                username: "user1_{{ $randomString() }}"
+                email: "user1_{{ $randomString() }}@test.com"
+                password: "password123"
+          capture:
+            - json: "$.data.createUser.id"
+              as: "user1Id"
+      
+      - post:
+          url: "/graphql"
+          json:
+            query: |
+              mutation CreateUser($input: CreateUserInput!) {
+                createUser(createUserInput: $input) {
+                  id
+                  username
+                  email
+                }
+              }
+            variables:
+              input:
+                username: "user2_{{ $randomString() }}"
+                email: "user2_{{ $randomString() }}@test.com"
+                password: "password123"
+          capture:
+            - json: "$.data.createUser.id"
+              as: "user2Id"
+      
+      # Créer la conversation
+      - post:
+          url: "/graphql"
+          json:
+            query: |
+              mutation CreateConversation($input: CreateConversationInput!) {
+                createConversation(createConversationInput: $input) {
+                  id
+                  name
+                  participants {
+                    id
+                    username
+                  }
+                  createdAt
+                }
+              }
+            variables:
+              input:
+                name: "Test Conversation {{ $randomString() }}"
+                participantIds: ["{{ user1Id }}", "{{ user2Id }}"]
+          capture:
+            - json: "$.data.createConversation.id"
+              as: "conversationId"
+          think: 1
+
+  # Scénario 3: Test intensif de messages (le plus important)
+  - weight: 50
+    name: "Send Message Performance - High Load"
+    flow:
+      # Setup: Créer utilisateur et conversation
+      - post:
+          url: "/graphql"
+          json:
+            query: |
+              mutation CreateUser($input: CreateUserInput!) {
+                createUser(createUserInput: $input) {
+                  id
+                }
+              }
+            variables:
+              input:
+                username: "sender_{{ $randomString() }}"
+                email: "sender_{{ $randomString() }}@test.com"
+                password: "password123"
+          capture:
+            - json: "$.data.createUser.id"
+              as: "senderId"
+      
+      - post:
+          url: "/graphql"
+          json:
+            query: |
+              mutation CreateUser($input: CreateUserInput!) {
+                createUser(createUserInput: $input) {
+                  id
+                }
+              }
+            variables:
+              input:
+                username: "receiver_{{ $randomString() }}"
+                email: "receiver_{{ $randomString() }}@test.com"
+                password: "password123"
+          capture:
+            - json: "$.data.createUser.id"
+              as: "receiverId"
+      
+      - post:
+          url: "/graphql"
+          json:
+            query: |
+              mutation CreateConversation($input: CreateConversationInput!) {
+                createConversation(createConversationInput: $input) {
+                  id
+                }
+              }
+            variables:
+              input:
+                name: "Perf Test {{ $randomString() }}"
+                participantIds: ["{{ senderId }}", "{{ receiverId }}"]
+          capture:
+            - json: "$.data.createConversation.id"
+              as: "testConversationId"
+      
+      # Test intensif: Envoyer plusieurs messages rapidement
+      - loop:
+        - post:
+            url: "/graphql"
+            json:
+              query: |
+                mutation SendMessage($input: SendMessageInput!) {
+                  sendMessage(sendMessageInput: $input) {
+                    id
+                    content
+                    senderId
+                    conversationId
+                    createdAt
+                  }
+                }
+              variables:
+                input:
+                  content: "Performance test message at {{ $timestamp() }}"
+                  senderId: "{{ senderId }}"
+                  conversationId: "{{ testConversationId }}"
+            think: 0.5  # 500ms entre chaque message
+        - post:
+            url: "/graphql"
+            json:
+              query: |
+                mutation SendMessage($input: SendMessageInput!) {
+                  sendMessage(sendMessageInput: $input) {
+                    id
+                    content
+                    senderId
+                    conversationId
+                    createdAt
+                  }
+                }
+              variables:
+                input:
+                  content: "Performance test message at {{ $timestamp() }}"
+                  senderId: "{{ senderId }}"
+                  conversationId: "{{ testConversationId }}"
+            think: 0.5
+        - post:
+            url: "/graphql"
+            json:
+              query: |
+                mutation SendMessage($input: SendMessageInput!) {
+                  sendMessage(sendMessageInput: $input) {
+                    id
+                    content
+                    senderId
+                    conversationId
+                    createdAt
+                  }
+                }
+              variables:
+                input:
+                  content: "Performance test message at {{ $timestamp() }}"
+                  senderId: "{{ senderId }}"
+                  conversationId: "{{ testConversationId }}"
+            think: 0.5
+        - post:
+            url: "/graphql"
+            json:
+              query: |
+                mutation SendMessage($input: SendMessageInput!) {
+                  sendMessage(sendMessageInput: $input) {
+                    id
+                    content
+                    senderId
+                    conversationId
+                    createdAt
+                  }
+                }
+              variables:
+                input:
+                  content: "Performance test message at {{ $timestamp() }}"
+                  senderId: "{{ senderId }}"
+                  conversationId: "{{ testConversationId }}"
+            think: 0.5
+        - post:
+            url: "/graphql"
+            json:
+              query: |
+                mutation SendMessage($input: SendMessageInput!) {
+                  sendMessage(sendMessageInput: $input) {
+                    id
+                    content
+                    senderId
+                    conversationId
+                    createdAt
+                  }
+                }
+              variables:
+                input:
+                  content: "Performance test message at {{ $timestamp() }}"
+                  senderId: "{{ senderId }}"
+                  conversationId: "{{ testConversationId }}"
+            think: 0.5 
