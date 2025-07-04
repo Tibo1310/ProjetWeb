@@ -101,7 +101,13 @@ export class UsersService {
       user.conversationIds = [];
     }
     user.conversationIds.push(conversationId);
-    return this.usersRepository.save(user);
+    const updatedUser = await this.usersRepository.save(user);
+    
+    // Invalider le cache car l'utilisateur a été modifié
+    await this.cacheService.del(this.cacheService.getUserKey(userId));
+    this.logger.debug(`Cache invalidated for user ${userId} after conversation added`);
+    
+    return updatedUser;
   }
 
   async delete(id: string): Promise<boolean> {
