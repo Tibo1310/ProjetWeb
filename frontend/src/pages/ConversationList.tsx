@@ -282,7 +282,7 @@ export default function ConversationList() {
           
           return (
             <ListItem
-              key={conversation.id}
+              key={`conversation-${conversation.id}`}
               sx={{
                 bgcolor: 'rgba(255, 255, 255, 0.05)',
                 borderRadius: 2,
@@ -317,7 +317,7 @@ export default function ConversationList() {
                 >
                   {conversation.participants.map((participant) => (
                     <Avatar
-                      key={participant.id}
+                      key={`${conversation.id}-${participant.id}`}
                       sx={{ bgcolor: stringToColor(participant.username) }}
                     >
                       {participant.username.charAt(0).toUpperCase()}

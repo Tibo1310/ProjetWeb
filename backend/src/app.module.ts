@@ -37,33 +37,14 @@ import { APP_GUARD } from '@nestjs/core';
     ]),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      url: process.env.DATABASE_URL,
+      host: 'postgres',
+      port: 5432,
+      username: 'user',
+      password: 'password',
+      database: 'chat_db',
       entities: [User],
       synchronize: true, // Ne pas utiliser en production
       logging: process.env.NODE_ENV === 'development',
-      // Configuration optimisée pour les performances
-      extra: {
-        max: 20,           // Pool maximum de 20 connexions
-        min: 5,            // Pool minimum de 5 connexions
-        acquire: 30000,    // Timeout de 30s pour acquérir une connexion
-        idle: 10000,       // Timeout de 10s pour une connexion inactive
-        evict: 1000,       // Intervalle de vérification des connexions (1s)
-        connectionTimeoutMillis: 10000, // Timeout de connexion
-        idleTimeoutMillis: 30000,       // Timeout d'inactivité
-      },
-      // Optimisations de performance
-      maxQueryExecutionTime: 5000, // Log des requêtes lentes > 5s
-      // Désactiver le cache Redis en mode test
-      ...(process.env.NODE_ENV !== 'test' && {
-        cache: {
-          type: 'redis',
-          options: {
-            host: process.env.REDIS_HOST || 'localhost',
-            port: parseInt(process.env.REDIS_PORT) || 6379,
-          },
-          duration: 30000, // Cache TypeORM pendant 30s
-        },
-      }),
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
@@ -96,11 +77,11 @@ import { APP_GUARD } from '@nestjs/core';
     RabbitMQModule,
   ],
   providers: [
-    // Rate limiting global (désactivé en test)
-    ...(process.env.NODE_ENV !== 'test' ? [{
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
-    }] : []),
+    // Rate limiting global (désactivé temporairement à cause de problèmes avec GraphQL)
+    // ...(process.env.NODE_ENV !== 'test' ? [{
+    //   provide: APP_GUARD,
+    //   useClass: ThrottlerGuard,
+    // }] : []),
   ],
 })
 export class AppModule {} 

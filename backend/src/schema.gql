@@ -63,6 +63,7 @@ type Mutation {
   updateConversation(updateConversationInput: UpdateConversationInput!): Conversation!
   deleteConversation(id: String!): Boolean!
   sendMessage(sendMessageInput: SendMessageInput!): Message!
+  clearTestConversations: Boolean!
 }
 
 input CreateUserInput {

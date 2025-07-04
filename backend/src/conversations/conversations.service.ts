@@ -25,7 +25,7 @@ export class ConversationsService {
     const participants = await this.usersLoader.loadUsers(createConversationInput.participantIds);
 
     const conversation: Conversation = {
-      id: Date.now().toString(),
+      id: `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       participantIds: createConversationInput.participantIds,
       participants,
       messages: [],
@@ -104,7 +104,7 @@ export class ConversationsService {
     const conversation = await this.findOne(sendMessageInput.conversationId);
     
     const message: Message = {
-      id: Date.now().toString(),
+      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       content: sendMessageInput.content,
       senderId: sendMessageInput.senderId,
       conversationId: sendMessageInput.conversationId,
@@ -133,5 +133,25 @@ export class ConversationsService {
     await this.cacheService.set(`messages:${conversationId}`, recentMessages);
     
     return recentMessages;
+  }
+
+  async clearTestConversations(): Promise<number> {
+    const testConversationsBefore = this.conversations.length;
+    
+    // Supprimer les conversations avec des IDs timestamps (13 chiffres)
+    this.conversations = this.conversations.filter(conv => {
+      const isTimestamp = /^\d{13}$/.test(conv.id);
+      if (isTimestamp) {
+        // Supprimer aussi du cache
+        this.cacheService.del(`conversation:${conv.id}`);
+        this.cacheService.del(`messages:${conv.id}`);
+      }
+      return !isTimestamp;
+    });
+    
+    const removed = testConversationsBefore - this.conversations.length;
+    console.log(`Removed ${removed} test conversations from memory`);
+    
+    return removed;
   }
 } 

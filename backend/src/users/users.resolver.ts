@@ -3,8 +3,8 @@ import { UsersService } from './users.service';
 import { User } from './models/user.entity';
 import { CreateUserInput, LoginInput } from './dto/create-user.input';
 import { AuthResponse } from './models/auth.model';
-import { Logger, UseInterceptors } from '@nestjs/common';
-import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+import { Logger } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @Resolver(() => User)
 export class UsersResolver {
@@ -13,28 +13,26 @@ export class UsersResolver {
   constructor(private readonly usersService: UsersService) {}
 
   @Query(() => [User])
-  @UseInterceptors(CacheInterceptor)
-  @CacheTTL(300) // Cache pendant 5 minutes
   async users(): Promise<User[]> {
     this.logger.debug('Fetching all users from database');
     return this.usersService.findAll();
   }
 
   @Query(() => User)
-  @UseInterceptors(CacheInterceptor)
-  @CacheTTL(600) // Cache pendant 10 minutes
   async user(@Args('id') id: string): Promise<User> {
     this.logger.debug(`Fetching user ${id} from database`);
     return this.usersService.findOne(id);
   }
 
   @Mutation(() => User)
+  @SkipThrottle()
   async createUser(@Args('createUserInput') createUserInput: CreateUserInput): Promise<User> {
     this.logger.log(`Creating user with email: ${createUserInput.email}`);
     return this.usersService.create(createUserInput);
   }
 
   @Mutation(() => AuthResponse)
+  @SkipThrottle()
   async login(@Args('loginInput') loginInput: LoginInput): Promise<AuthResponse> {
     this.logger.log(`Login attempt for email: ${loginInput.email}`);
     try {

@@ -71,4 +71,10 @@ export class ConversationsResolver {
   messageAdded() {
     return pubSub.asyncIterator('messageAdded');
   }
+
+  @Mutation(() => Boolean)
+  async clearTestConversations(): Promise<boolean> {
+    const removed = await this.conversationsService.clearTestConversations();
+    return removed > 0;
+  }
 } 

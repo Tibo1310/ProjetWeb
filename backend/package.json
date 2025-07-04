@@ -23,7 +23,9 @@
     "test:load": "artillery run artillery.yml",
     "test:load:report": "artillery run --output report.json artillery.yml && artillery report report.json",
     "test:performance": "artillery run artillery.yml",
-    "test:performance:report": "artillery run --output performance-report.json artillery.yml && artillery report performance-report.json"
+    "test:performance:report": "artillery run --output performance-report.json artillery.yml && artillery report performance-report.json",
+    "clean:test-data": "set DATABASE_URL=postgresql://user:password@localhost:5432/chat_db && ts-node src/clean-test-data.ts",
+    "clean:test-data:unix": "DATABASE_URL=postgresql://user:password@localhost:5432/chat_db ts-node src/clean-test-data.ts"
   },
   "dependencies": {
     "@apollo/server": "^4.7.5",

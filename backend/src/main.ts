@@ -9,6 +9,9 @@ async function bootstrap() {
       logger: ['error', 'warn', 'debug', 'log', 'verbose'],
     });
     
+    // Configure Express to trust proxy for IP address detection
+    app.getHttpAdapter().getInstance().set('trust proxy', true);
+    
     // Enable CORS with specific configuration
     app.enableCors({
       origin: true, // Allow all origins for now
