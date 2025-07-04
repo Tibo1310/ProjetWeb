@@ -5,6 +5,7 @@ import { CreateConversationInput } from './dto/create-conversation.input';
 import { UpdateConversationInput } from './dto/update-conversation.input';
 import { SendMessageInput } from './dto/send-message.input';
 import { UsersService } from '../users/users.service';
+import { UsersLoader } from '../users/users.loader';
 import { CacheService } from '../cache/cache.service';
 import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
 
@@ -14,14 +15,14 @@ export class ConversationsService {
 
   constructor(
     private readonly usersService: UsersService,
+    private readonly usersLoader: UsersLoader,
     private readonly cacheService: CacheService,
     private readonly rabbitMQService: RabbitMQService,
   ) {}
 
   async create(createConversationInput: CreateConversationInput): Promise<Conversation> {
-    const participants = await Promise.all(
-      createConversationInput.participantIds.map(id => this.usersService.findOne(id))
-    );
+    // OPTIMISATION N+1: Utilisation de DataLoader pour batching
+    const participants = await this.usersLoader.loadUsers(createConversationInput.participantIds);
 
     const conversation: Conversation = {
       id: Date.now().toString(),
@@ -68,9 +69,8 @@ export class ConversationsService {
       throw new NotFoundException(`Conversation with ID ${updateConversationInput.id} not found`);
     }
 
-    const participants = await Promise.all(
-      updateConversationInput.participantIds.map(id => this.usersService.findOne(id))
-    );
+    // OPTIMISATION N+1: Utilisation de DataLoader pour batching
+    const participants = await this.usersLoader.loadUsers(updateConversationInput.participantIds);
 
     const updatedConversation: Conversation = {
       ...this.conversations[conversationIndex],

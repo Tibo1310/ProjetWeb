@@ -5,7 +5,7 @@
 
 - **Gestion des utilisateurs** : Inscription, connexion, profils
 - **Conversations** : Création de conversations entre utilisateurs
-- **Messages temps réel** : Envoi/réception instantanée via WebSockets
+- **Messages temps réel** : Envoi/réception instantanée via WebSockets (non fonctionnel actuellement)
 - **Performance optimisée** : Cache Redis, rate limiting, optimisations GraphQL
 
 ## 🛠 Stack Technique
