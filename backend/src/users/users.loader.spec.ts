@@ -73,7 +73,7 @@ describe('UsersLoader (DataLoader N+1 Prevention)', () => {
       expect(result2).toEqual(user2);
       expect(result3).toEqual(user3);
 
-      // 🎯 PREUVE D'OPTIMISATION: Une seule requête SQL pour 3 utilisateurs
+      // PREUVE D'OPTIMISATION: Une seule requête SQL pour 3 utilisateurs
       expect(usersRepository.find).toHaveBeenCalledTimes(1);
       expect(usersRepository.find).toHaveBeenCalledWith({
         where: { id: expect.any(Object) }, // TypeORM In() clause

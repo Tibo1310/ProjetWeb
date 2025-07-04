@@ -74,6 +74,9 @@ RABBITMQ_URL=amqp://user:password@localhost:5672
 ### 3. Démarrer les services externes
 
 ```bash
+# Build 
+docker-compose up --build
+
 # Démarrer PostgreSQL, Redis et RabbitMQ
 docker-compose up -d
 

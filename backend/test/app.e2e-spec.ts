@@ -245,7 +245,7 @@ describe('AppController (e2e)', () => {
       expect(response.body.data.sendMessage).toBeDefined();
       expect(response.body.data.sendMessage.content).toBe('Integration test message');
 
-      // 🎯 TEST D'INTÉGRATION : Vérifier que RabbitMQ a été appelé
+      // TEST D'INTÉGRATION : Vérifier que RabbitMQ a été appelé
       expect(rabbitMQSpy).toHaveBeenCalledTimes(1);
       expect(rabbitMQSpy).toHaveBeenCalledWith(
         'chat.message.created',
