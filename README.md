@@ -44,7 +44,7 @@ git --version
 ```bash
 # Cloner le repo
 git clone https://github.com/Tibo1310/ProjetWeb
-cd ProjetWeb_ThibaultDelattre
+cd ProjetWeb
 
 # Backend
 cd backend
