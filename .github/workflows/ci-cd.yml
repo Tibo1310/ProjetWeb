@@ -12,6 +12,30 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: chat_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
       rabbitmq:
         image: rabbitmq:3-management
         ports:
@@ -38,10 +62,22 @@ jobs:
 
       - name: Run E2E Tests
         working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://user:password@localhost:5432/chat_db
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          RABBITMQ_URL: amqp://guest:guest@localhost:5672
+          PORT: 3000
         run: npm run test:e2e
 
       - name: Run Performance Tests
         working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://user:password@localhost:5432/chat_db
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          RABBITMQ_URL: amqp://guest:guest@localhost:5672
+          PORT: 3000
         run: npm run test:load
 
       - name: Upload Test Reports
