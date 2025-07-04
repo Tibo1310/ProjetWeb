@@ -1,10 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { GraphQLModule } from '@nestjs/graphql';
-import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import { join } from 'path';
+import { DataSource } from 'typeorm';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
@@ -13,16 +11,15 @@ describe('AppController (e2e)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
         AppModule,
-        GraphQLModule.forRoot<ApolloDriverConfig>({
-          driver: ApolloDriver,
-          autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
-          sortSchema: true,
-        }),
       ],
     }).compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();
+
+    // Clean database before each test
+    const dataSource = app.get(DataSource);
+    await dataSource.query('TRUNCATE TABLE "user" RESTART IDENTITY CASCADE;');
   });
 
   afterAll(async () => {
@@ -44,7 +41,7 @@ describe('AppController (e2e)', () => {
     mutation CreateConversation($input: CreateConversationInput!) {
       createConversation(createConversationInput: $input) {
         id
-        title
+        name
         participants {
           id
           username
@@ -58,10 +55,7 @@ describe('AppController (e2e)', () => {
       sendMessage(sendMessageInput: $input) {
         id
         content
-        sender {
-          id
-          username
-        }
+        senderId
       }
     }
   `;
@@ -132,14 +126,14 @@ describe('AppController (e2e)', () => {
           variables: {
             input: {
               participantIds: [user1Id, user2Id],
-              title: 'Test Conversation',
+              name: 'Test Conversation',
             },
           },
         })
         .expect(200)
         .expect(res => {
           expect(res.body.data.createConversation).toBeDefined();
-          expect(res.body.data.createConversation.title).toBe('Test Conversation');
+          expect(res.body.data.createConversation.name).toBe('Test Conversation');
           expect(res.body.data.createConversation.participants).toHaveLength(2);
         });
     });
@@ -173,7 +167,7 @@ describe('AppController (e2e)', () => {
           variables: {
             input: {
               participantIds: [userId],
-              title: 'Message Test Conversation',
+              name: 'Message Test Conversation',
             },
           },
         });
@@ -197,7 +191,7 @@ describe('AppController (e2e)', () => {
         .expect(res => {
           expect(res.body.data.sendMessage).toBeDefined();
           expect(res.body.data.sendMessage.content).toBe('Hello, World!');
-          expect(res.body.data.sendMessage.sender.id).toBe(userId);
+          expect(res.body.data.sendMessage.senderId).toBe(userId);
         });
     });
   });
