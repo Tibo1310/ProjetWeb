@@ -20,10 +20,12 @@ describe('AppController (e2e)', () => {
     // Clean database before each test
     const dataSource = app.get(DataSource);
     await dataSource.query('TRUNCATE TABLE "user" RESTART IDENTITY CASCADE;');
-  });
+  }, 30000); // 30 seconds timeout
 
   afterAll(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   const createUserMutation = `
