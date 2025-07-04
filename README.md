@@ -43,7 +43,7 @@ git --version
 
 ```bash
 # Cloner le repo
-git clone https://github.com/votre-username/ProjetWeb_ThibaultDelattre.git
+git clone https://github.com/Tibo1310/ProjetWeb
 cd ProjetWeb_ThibaultDelattre
 
 # Backend
@@ -61,24 +61,13 @@ cd ..
 
 Créer le fichier `.env` dans le dossier `backend/` :
 
-```bash
-cd backend
-cp .env.example .env
-```
 
 Contenu du `.env` :
 ```env
-# Port de l'API
 PORT=3001
-
-# Base de données PostgreSQL
 DATABASE_URL=postgresql://user:password@localhost:5432/chat_db
-
-# Redis (cache)
 REDIS_HOST=localhost
 REDIS_PORT=6379
-
-# RabbitMQ (messages temps réel)
 RABBITMQ_URL=amqp://user:password@localhost:5672
 ```
 
@@ -99,14 +88,13 @@ Les services exposent les ports :
 
 ### 4. Lancer l'application
 
-#### Backend (Terminal 1)
+#### Backend (Terminal 1 - se lance avec Docker)
 ```bash
-cd backend
-npm run start:dev
+docker-compose up -d 
 ```
 ✅ API disponible sur `http://localhost:3001/graphql`
 
-#### Frontend (Terminal 2)
+#### Frontend (Terminal 2 - se lance manuellement)
 ```bash
 cd frontend
 npm start
@@ -131,40 +119,6 @@ mutation {
     username
     email
     isOnline
-  }
-}
-```
-
-**Créer une conversation :**
-```graphql
-mutation {
-  createConversation(createConversationInput: {
-    name: "Discussion générale"
-    participantIds: ["user1", "user2"]
-  }) {
-    id
-    name
-    participants {
-      username
-    }
-  }
-}
-```
-
-**Envoyer un message :**
-```graphql
-mutation {
-  sendMessage(sendMessageInput: {
-    content: "Hello world!"
-    conversationId: "conv123"
-    senderId: "user1"
-  }) {
-    id
-    content
-    createdAt
-    sender {
-      username
-    }
   }
 }
 ```
@@ -336,7 +290,6 @@ Le pipeline CI/CD se déclenche sur :
 ```bash
 DOCKERHUB_USERNAME      # Username Docker Hub
 DOCKERHUB_TOKEN         # Token d'accès Docker Hub  
-RENDER_DEPLOY_HOOK_URL  # Webhook URL Render.com
 ```
 
 ## 🎯 Optimisations implémentées
